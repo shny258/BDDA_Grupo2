@@ -1,3 +1,3 @@
 # BDDA_Grupo2
-integranntes:
-Luciano
+integranntes: Luciano
+Nicolas Celso 
