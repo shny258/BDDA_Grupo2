@@ -708,3 +708,139 @@ BEGIN
     DELETE FROM socio.categoria_socio WHERE nombre = @nombre;
 END;
 GO
+
+
+-- ==========================================
+--   INSERTAR ACTIVIDAD
+-- ==========================================
+CREATE PROCEDURE actividad.insertar_actividad
+    @nombre VARCHAR(50),
+    @costo_mensual NUMERIC(15,2)
+AS
+BEGIN
+	IF @costo_mensual is NULL or @costo_mensual < 0
+	begin
+		raiserror('Costo invalido',16,1);
+		return
+	end
+    INSERT INTO actividad.actividad (nombre, costo_mensual)
+    VALUES (@nombre, @costo_mensual);
+END;
+GO
+
+-- ==========================================
+--  MODIFICAR ACTIVIDAD
+-- ==========================================
+CREATE PROCEDURE actividad.modificar_actividad
+    @id INT,
+    @nombre VARCHAR(50),
+    @costo_mensual NUMERIC(15,2)
+AS
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM actividad.actividad WHERE id_actividad = @id)
+    BEGIN
+        RAISERROR('Actividad no encontrada.', 16, 1);
+        RETURN;
+    END
+	IF @costo_mensual is NULL or @costo_mensual < 0
+	begin
+		raiserror('Costo invalido',16,1);
+		return
+	end
+    UPDATE actividad.actividad
+    SET nombre = @nombre, costo_mensual = @costo_mensual
+    WHERE id_actividad = @id;
+END;
+GO
+-- ==========================================
+--  BORRAR ACTIVIDAD
+-- ==========================================
+CREATE PROCEDURE actividad.borrar_actividad
+    @id INT
+AS
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM actividad.actividad WHERE id_actividad = @id)
+    BEGIN
+        RAISERROR('Actividad no encontrada.', 16, 1);
+        RETURN;
+    END
+    DELETE FROM actividad.actividad WHERE id_actividad = @id;
+END;
+GO
+-- ==========================================
+-- INSERTAR ACTIVIDAD EXTRA
+-- ==========================================
+CREATE PROCEDURE actividad.insertar_actividad_extra
+    @nombre VARCHAR(50),
+    @costo_adulto NUMERIC(15,2),
+    @costo_menor NUMERIC(15,2)
+AS
+BEGIN
+    IF @costo_adulto IS NULL OR @costo_adulto < 0
+    BEGIN
+        RAISERROR('Costo de adulto inválido.', 16, 1);
+        RETURN;
+    END
+
+    IF @costo_menor IS NULL OR @costo_menor < 0
+    BEGIN
+        RAISERROR('Costo de menor inválido.', 16, 1);
+        RETURN;
+    END
+
+    INSERT INTO actividad.actividad_extra (nombre, costo_adulto, costo_menor)
+    VALUES (@nombre, @costo_adulto, @costo_menor);
+END;
+GO
+-- ==========================================
+--MODIFICAR ACTIVIDAD EXTRA
+-- ==========================================
+CREATE PROCEDURE actividad.modificar_actividad_extra
+    @id INT,
+    @nombre VARCHAR(50),
+    @costo_adulto NUMERIC(15,2),
+    @costo_menor NUMERIC(15,2)
+AS
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM actividad.actividad_extra WHERE id_actividad_extra = @id)
+    BEGIN
+        RAISERROR('Actividad extra no encontrada.', 16, 1);
+        RETURN;
+    END
+
+    IF @costo_adulto IS NULL OR @costo_adulto < 0
+    BEGIN
+        RAISERROR('Costo de adulto inválido.', 16, 1);
+        RETURN;
+    END
+
+    IF @costo_menor IS NULL OR @costo_menor < 0
+    BEGIN
+        RAISERROR('Costo de menor inválido.', 16, 1);
+        RETURN;
+    END
+
+    UPDATE actividad.actividad_extra
+    SET nombre = @nombre,
+        costo_adulto = @costo_adulto,
+        costo_menor = @costo_menor
+    WHERE id_actividad_extra = @id;
+END;
+GO
+-- ==========================================
+-- BORRAR ACTIVIDAD EXTRA
+-- ==========================================
+CREATE PROCEDURE actividad.borrar_actividad_extra
+    @id INT
+AS
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM actividad.actividad_extra WHERE id_actividad_extra = @id)
+    BEGIN
+        RAISERROR('Actividad extra no encontrada.', 16, 1);
+        RETURN;
+    END
+
+    DELETE FROM actividad.actividad_extra
+    WHERE id_actividad_extra = @id;
+END;
+GO
