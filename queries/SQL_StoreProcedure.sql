@@ -386,41 +386,41 @@ BEGIN
     -- Validar id_pago
     IF @id_pago IS NULL OR @id_pago <= 0
     BEGIN
-        RAISERROR('ID pago inválido.', 16, 1);
+        RAISERROR('ID pago inválido', 16, 1);
         RETURN;
     END
 
     IF NOT EXISTS (SELECT 1 FROM factura.pago WHERE id_pago = @id_pago)
     BEGIN
-        RAISERROR('ID pago no existe.', 16, 1);
+        RAISERROR('ID pago no existe', 16, 1);
         RETURN;
     END
 
     -- Validar existencia factura
     IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura)
     BEGIN
-        RAISERROR('ID factura no existe.', 16, 1);
+        RAISERROR('ID factura no existe', 16, 1);
         RETURN;
     END
 
     -- Validar existencia medio de pago
     IF NOT EXISTS (SELECT 1 FROM factura.medio_de_pago WHERE id_medio_de_pago = @id_medio_de_pago)
     BEGIN
-        RAISERROR('ID medio de pago no existe.', 16, 1);
+        RAISERROR('ID medio de pago no existe', 16, 1);
         RETURN;
     END
 
     -- Validar fecha
     IF @fecha_pago IS NULL
     BEGIN
-        RAISERROR('Fecha inválida.', 16, 1);
+        RAISERROR('Fecha invalido', 16, 1);
         RETURN;
     END
 
     -- Validar tipo_pago
     IF @tipo_pago IS NULL OR LTRIM(RTRIM(@tipo_pago)) = ''
     BEGIN
-        RAISERROR('Tipo de pago inválido.', 16, 1);
+        RAISERROR('Tipo de pago invalido', 16, 1);
         RETURN;
     END
 
@@ -475,15 +475,15 @@ AS
 BEGIN
 	--validaciones
     IF @dni IS NULL OR LEN(@dni) = 0 BEGIN
-        RAISERROR ('El DNI no puede estar vacío.', 16, 1);
+        RAISERROR ('El DNI no puede estar vacio', 16, 1);
         RETURN;
     END
     IF @nombre IS NULL OR LEN(@nombre) = 0 BEGIN
-        RAISERROR ('El nombre no puede estar vacío.', 16, 1);
+        RAISERROR ('El nombre no puede estar vacio', 16, 1);
         RETURN;
     END
     IF @apellido IS NULL OR LEN(@apellido) = 0 BEGIN
-        RAISERROR ('El apellido no puede estar vacío.', 16, 1);
+        RAISERROR ('El apellido no puede estar vacio', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -509,7 +509,7 @@ AS
 BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio) BEGIN
-        RAISERROR ('El socio no existe.', 16, 1);
+        RAISERROR ('El socio no existe', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -535,7 +535,7 @@ AS
 BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio) BEGIN
-        RAISERROR ('El socio no existe.', 16, 1);
+        RAISERROR ('El socio no existe', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -555,19 +555,19 @@ AS
 BEGIN
 	--validaciones
     IF LEN(@usuario) = 0 BEGIN
-        RAISERROR ('El nombre de usuario no puede estar vacío.', 16, 1);
+        RAISERROR ('El nombre de usuario no puede estar vacio', 16, 1);
         RETURN;
     END
     IF LEN(@contrasenia) < 10 BEGIN
-        RAISERROR ('la contraseña debe tener al menos 10 caracteres.', 16, 1);
+        RAISERROR ('la contraseña debe tener al menos 10 caracteres', 16, 1);
         RETURN;
     END
     IF @rol NOT IN ('administrador', 'empleado', 'socio') BEGIN
-        RAISERROR ('Rol inválido. Debe ser "administrador", "empleado" o "socio".', 16, 1);
+        RAISERROR ('Rol inválido. Debe ser "administrador", "empleado" o "socio"', 16, 1);
         RETURN;
     END
     IF @fecha_vigencia_contrasenia IS NULL BEGIN
-        RAISERROR ('Debe especificar la fecha de vigencia de la contraseña.', 16, 1);
+        RAISERROR ('Debe especificar la fecha de vigencia de la contraseña', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -588,19 +588,19 @@ AS
 BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.cuenta WHERE id_usuario = @id_usuario) BEGIN
-        RAISERROR ('La cuenta no existe.', 16, 1);
+        RAISERROR ('La cuenta no existe', 16, 1);
         RETURN;
     END
     IF LEN(@contrasenia) < 10 BEGIN
-        RAISERROR ('la contraseña debe tener al menos 10 caracteres.', 16, 1);
+        RAISERROR ('la contraseña debe tener al menos 10 caracteres', 16, 1);
         RETURN;
     END
     IF @rol NOT IN ('administrador', 'empleado', 'socio') BEGIN
-        RAISERROR ('Rol inválido. Debe ser "administrador", "empleado" o "socio".', 16, 1);
+        RAISERROR ('Rol invalido. Debe ser "administrador", "empleado" o "socio"', 16, 1);
         RETURN;
     END
     IF @fecha_vigencia_contrasenia IS NULL BEGIN
-        RAISERROR ('Debe especificar la fecha de vigencia de la contraseña.', 16, 1);
+        RAISERROR ('Debe especificar la fecha de vigencia de la contraseña', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -621,7 +621,7 @@ AS
 BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.cuenta WHERE id_usuario = @id_usuario) BEGIN
-        RAISERROR ('La cuenta no existe.', 16, 1);
+        RAISERROR ('La cuenta no existe', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -644,12 +644,12 @@ AS
 BEGIN
 	--validaciones
     IF LEN(@dni) < 7 BEGIN
-        RAISERROR('El DNI debe tener al menos 7 caracteres.', 16, 1);
+        RAISERROR('El DNI debe tener al menos 7 caracteres', 16, 1);
         RETURN;
     END
 
     IF EXISTS (SELECT 1 FROM socio.grupo_familiar WHERE dni = @dni) BEGIN
-        RAISERROR('El DNI ya está registrado.', 16, 1);
+        RAISERROR('El DNI ya está registrado', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -674,7 +674,7 @@ AS
 BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.grupo_familiar WHERE id_grupo_familiar = @id_grupo_familiar) BEGIN
-        RAISERROR('El grupo familiar no existe.', 16, 1);
+        RAISERROR('El grupo familiar no existe', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -695,7 +695,7 @@ AS
 BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.grupo_familiar WHERE id_grupo_familiar = @id_grupo_familiar) BEGIN
-        RAISERROR('El grupo familiar no existe.', 16, 1);
+        RAISERROR('El grupo familiar no existe', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -717,19 +717,19 @@ AS
 BEGIN
     -- Validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio) BEGIN
-        RAISERROR('El socio no existe.', 16, 1);
+        RAISERROR('El socio no existe', 16, 1);
         RETURN;
     END
     IF @fecha_renovada < @fecha_inicio BEGIN
-        RAISERROR('La fecha de renovación no puede ser anterior a la fecha de inicio.', 16, 1);
+        RAISERROR('La fecha de renovación no puede ser anterior a la fecha de inicio', 16, 1);
         RETURN;
     END
     IF @fecha_fin < @fecha_renovada BEGIN
-        RAISERROR('La fecha de fin no puede ser anterior a la fecha de renovación.', 16, 1);
+        RAISERROR('La fecha de fin no puede ser anterior a la fecha de renovación', 16, 1);
         RETURN;
     END
     IF @costo <= 0 BEGIN
-        RAISERROR('El costo debe ser mayor a cero.', 16, 1);
+        RAISERROR('El costo debe ser mayor a cero', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -750,7 +750,7 @@ AS
 BEGIN
     -- Validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia) BEGIN
-        RAISERROR('La membresía no existe.', 16, 1);
+        RAISERROR('La membresia no existe', 16, 1);
         RETURN;
     END
 
@@ -758,15 +758,15 @@ BEGIN
     SELECT @fecha_inicio = fecha_inicio FROM socio.membresia WHERE id_membresia = @id_membresia;
 
     IF @fecha_renovada < @fecha_inicio BEGIN
-        RAISERROR('La fecha de renovación no puede ser anterior a la fecha de inicio.', 16, 1);
+        RAISERROR('La fecha de renovación no puede ser anterior a la fecha de inicio', 16, 1);
         RETURN;
     END
     IF @fecha_fin < @fecha_renovada BEGIN
-        RAISERROR('La fecha de fin no puede ser anterior a la fecha de renovación.', 16, 1);
+        RAISERROR('La fecha de fin no puede ser anterior a la fecha de renovacion', 16, 1);
         RETURN;
     END
     IF @costo <= 0 BEGIN
-        RAISERROR('El costo debe ser mayor a cero.', 16, 1);
+        RAISERROR('El costo debe ser mayor a cero', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -787,7 +787,7 @@ AS
 BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia) BEGIN
-        RAISERROR('La membresía no existe.', 16, 1);
+        RAISERROR('La membresia no existe', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -807,20 +807,20 @@ AS
 BEGIN
 	--validaciones
     IF @edad_min < 0 OR @edad_max < 0 BEGIN
-        RAISERROR('Las edades no pueden ser negativas.', 16, 1);
+        RAISERROR('Las edades no pueden ser negativas', 16, 1);
         RETURN;
     END
     IF @edad_max < @edad_min BEGIN
-        RAISERROR('La edad máxima no puede ser menor que la mínima.', 16, 1);
+        RAISERROR('La edad máxima no puede ser menor que la minima', 16, 1);
         RETURN;
     END
     IF @costo <= 0 BEGIN
-        RAISERROR('El costo debe ser mayor a cero.', 16, 1);
+        RAISERROR('El costo debe ser mayor a cero', 16, 1);
         RETURN;
     END
 
     IF EXISTS (SELECT 1 FROM socio.categoria_socio WHERE nombre = @nombre) BEGIN
-        RAISERROR('La categoría ya existe.', 16, 1);
+        RAISERROR('La categoria ya existe', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -841,11 +841,11 @@ AS
 BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.categoria_socio WHERE nombre = @nombre) BEGIN
-        RAISERROR('La categoría no existe.', 16, 1);
+        RAISERROR('La categoría no existe', 16, 1);
         RETURN;
     END
     IF @edad_min < 0 OR @edad_max < 0 BEGIN
-        RAISERROR('Las edades no pueden ser negativas.', 16, 1);
+        RAISERROR('Las edades no pueden ser negativas', 16, 1);
         RETURN;
     END
     IF @edad_max < @edad_min BEGIN
