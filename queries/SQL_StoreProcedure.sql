@@ -4,6 +4,50 @@
 --(observar las pautas para nomenclatura antes expuestas) mediante la sección de prácticas de MIEL. 
 --Solo uno de los miembros del grupo debe hacer la entrega
 
+-- ==========================================
+-- Insertar Detalle Factura
+-- ==========================================
+Create procedure factura.insertar_detalle_factura
+(@id_factura int, @id_membresia int, @id_participante int, @id_reserva int, @monto numeric(15,2), @fecha date) as
+BEGIN
+	--validaciones
+	IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura)
+	or	(NOT EXISTS (SELECT 1 FROM actividad.participante_actividad_extra WHERE id_participante = @id_participante) 
+	and NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia)
+	and NOT EXISTS (SELECT 1 FROM actividad.reserva_sum WHERE id_reserva = @id_reserva))
+	BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+	if @monto <= 0 BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+	if @fecha is null begin
+        RAISERROR ('fecha es nula', 16, 1);
+        RETURN;
+    END
+	--termina validacion
+	insert into factura.detalle_factura(id_factura, id_membresia, id_participante, id_reserva, monto, fecha)
+	values (@id_factura, @id_membresia, @id_participante, @id_reserva, @monto, @fecha)
+
+END;
+go
+
+-- ==========================================
+-- Eliminar Detalle Factura
+-- ==========================================
+Create procedure factura.eliminar_detalle_factura (@id_detallefactura int) as
+BEGIN
+	--validaciones
+	IF NOT EXISTS (SELECT 1 FROM factura.detalle_factura WHERE id_detallefactura = @id_detallefactura) BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+	--termina validacion
+	delete factura.detalle_factura where id_detallefactura = @id_detallefactura
+END;
+go
 
 -- ==========================================
 -- Insertar Aplica Descuento
