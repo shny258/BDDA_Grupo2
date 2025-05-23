@@ -4,18 +4,56 @@
 --(observar las pautas para nomenclatura antes expuestas) mediante la sección de prácticas de MIEL. 
 --Solo uno de los miembros del grupo debe hacer la entrega
 
---
+
+-- ==========================================
+-- Insertar Aplica Descuento
+-- ==========================================
+Create procedure factura.insertar_aplica_descuento
+(@id_descuento int, @id_detallefactura int) as
+BEGIN
+	--validaciones
+	IF NOT EXISTS (SELECT 1 FROM factura.descuento WHERE id_descuento = @id_descuento) BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+	IF NOT EXISTS (SELECT 1 FROM factura.detalle_factura WHERE id_detallefactura = @id_detallefactura) BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+	--termina validacion
+	insert into factura.aplica_descuento(id_descuento, id_detallefactura)
+	values (@id_descuento, @id_detallefactura)
+END;
+go
+
+-- ==========================================
+-- Eliminar Aplica Descuento
+-- ==========================================
+Create procedure factura.eliminar_aplica_descuento (@id_descuento int, @id_detallefactura int) as
+BEGIN
+	--validaciones
+	IF NOT EXISTS (SELECT 1 FROM factura.descuento WHERE id_descuento = @id_descuento) or
+	NOT EXISTS (SELECT 1 FROM factura.detalle_factura WHERE id_detallefactura = @id_detallefactura) BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+	--termina validacion
+	delete factura.aplica_descuento where id_descuento = @id_descuento and id_detallefactura = @id_detallefactura
+END;
+go
 
 -- ==========================================
 -- Insertar Medio de Pago
 -- ==========================================
 Create procedure factura.insertar_medio_de_pago (@nombre varchar(50)) as
 BEGIN
+	--validaciones
 	IF @nombre is NULL or ltrim(rtrim(@nombre)) = ''
 		begin
 			raiserror('Nombre invalido',16,1);
 			return
 		end
+	--termina validacion
 	insert into factura.medio_de_pago (nombre)
 	values (@nombre)
 END;
@@ -26,11 +64,13 @@ go
 -- ==========================================
 Create procedure factura.modificar_medio_de_pago (@nombre varchar(50), @id int) as
 BEGIN
+	--validaciones
 	IF @nombre is NULL or ltrim(rtrim(@nombre)) = ''
 		begin
 			raiserror('Nombre invalido',16,1);
 			return
 		end
+	--termina validacion
 	update factura.medio_de_pago 
 	set nombre = @nombre 
 	where id_medio_de_pago = @id
@@ -42,11 +82,13 @@ go
 -- ==========================================
 Create procedure factura.eliminar_medio_de_pago (@id int) as
 BEGIN
+	--validaciones
 	IF @id is NULL
 		begin
 			raiserror('Id invalida',16,1);
 			return
 		end
+	--termina validacion
 	delete factura.medio_de_pago where id_medio_de_pago = @id
 END;
 go
@@ -57,7 +99,7 @@ go
 Create procedure factura.insertar_descuento
 (@nombre nvarchar(50), @porcentaje numeric(5,2)) as
 BEGIN
---validaciones
+	--validaciones
 	IF @nombre is NULL or ltrim(rtrim(@nombre)) = ''
 	begin
 		raiserror('nombre invalido',16,1);
@@ -68,8 +110,7 @@ BEGIN
 		raiserror('porcentaje invalido',16,1);
 		return
 	end
---
---mas validaciones tal vez
+	--termina validacion
 	insert into factura.descuento (nombre, porcentaje)
 	values (@nombre, @porcentaje)
 END;
@@ -81,7 +122,7 @@ go
 Create procedure factura.modificar_descuento
 (@id_descuento int, @nombre nvarchar(50), @porcentaje numeric(5,2)) as
 BEGIN
---validaciones
+	--validaciones
 	IF @id_descuento is NULL
 	begin
 		raiserror('id invalido.',16,1);
@@ -101,7 +142,7 @@ BEGIN
 		raiserror('nombre invalido',16,1);
 		return
 	end
---termina validacion
+	--termina validacion
 	update factura.descuento
 	set nombre = @nombre, porcentaje = @porcentaje
 	where id_descuento = @id_descuento
@@ -113,6 +154,7 @@ go
 -- ==========================================
 Create procedure factura.eliminar_descuento (@id int) as
 BEGIN
+	--validaciones
 	IF @id is NULL
 		begin
 			raiserror('Id invalida',16,1);
@@ -122,7 +164,7 @@ BEGIN
         RAISERROR ('id no existe', 16, 1);
         RETURN;
     END
-
+	--termina validacion
 	delete factura.descuento where id_descuento = @id
 END;
 go
@@ -133,8 +175,8 @@ go
 Create procedure factura.insertar_factura_mensual 
 (@fecha_emision date, @fecha_vencimiento date, @estado varchar(20), @total numeric(15,2)) as
 BEGIN
---validaciones
-	IF @estado is NULL or ltrim(rtrim(@nombre)) = ''
+	--validaciones
+	IF @estado is NULL or ltrim(rtrim(@estado)) = ''
 	begin
 		raiserror('Estado invalido',16,1);
 		return
@@ -154,9 +196,7 @@ BEGIN
 		raiserror('Fecha invalido',16,1);
 		return
 	end
---
---mas validaciones tal vez
-
+	--termina validacion
 	insert into factura.factura_mensual(fecha_emision, fecha_vencimiento, estado, total)
 	values (@fecha_emision, @fecha_vencimiento, @estado, @total)
 END;
@@ -168,7 +208,7 @@ go
 Create procedure factura.modificar_factura_mensual 
 (@id int, @fecha_emision date, @fecha_vencimiento date, @estado varchar(20), @total numeric(15,2)) as
 BEGIN
---validaciones
+	--validaciones
 	IF @id is NULL
 	begin
 		raiserror('id invalido.',16,1);
@@ -178,7 +218,7 @@ BEGIN
         RAISERROR ('id no existe', 16, 1);
         RETURN;
     END
---termina validacion
+	--termina validacion
 	update factura.factura_mensual
 	set fecha_emision = @fecha_emision, fecha_vencimiento = @fecha_vencimiento, estado = @estado, total = @total
 	where id_factura = @id
@@ -190,6 +230,7 @@ go
 -- ==========================================
 Create procedure factura.eliminicar_factura_mensual (@id int) as
 BEGIN
+	--validaciones
 	IF @id is NULL
 		begin
 			raiserror('Id invalida',16,1);
@@ -199,7 +240,7 @@ BEGIN
         RAISERROR ('id no existe', 16, 1);
         RETURN;
     END
-
+	--termina validacion
 	delete factura.medio_de_pago where id_medio_de_pago = @id
 END;
 go
@@ -210,7 +251,7 @@ go
 Create procedure factura.insertar_pago
 (@id_factura int, @id_medio_de_pago int, @tipo_pago varchar(20), @fecha_pago date) as
 BEGIN
---validaciones
+	--validaciones
 	IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura) BEGIN
         RAISERROR ('id no existe', 16, 1);
         RETURN;
@@ -229,8 +270,7 @@ BEGIN
 		raiserror('tipo_pago invalido',16,1);
 		return
 	end
---
---mas validaciones tal vez
+	--termina validacion
 	insert into factura.pago(id_factura, id_medio_de_pago, tipo_pago, fecha_pago )
 	values (@id_factura, @id_medio_de_pago, @tipo_pago, @fecha_pago)
 END;
@@ -242,7 +282,7 @@ go
 Create procedure factura.modificar_pago 
 (@id_pago int, @id_factura int, @id_medio_de_pago int, @tipo_pago varchar(20), @fecha_pago date) as
 BEGIN
---validaciones
+	--validaciones
 	IF @id_pago is NULL
 	begin
 		raiserror('id invalido.',16,1);
@@ -262,7 +302,7 @@ BEGIN
 		raiserror('tipo_pago invalido',16,1);
 		return
 	end
---termina validacion
+	--termina validacion
 	update factura.pago
 	set id_factura = @id_factura, id_medio_de_pago = @id_medio_de_pago, tipo_pago = @tipo_pago, fecha_pago = @fecha_pago
 	where id_pago = @id_pago
@@ -274,6 +314,7 @@ go
 -- ==========================================
 Create procedure factura.eliminicar_pago (@id int) as
 BEGIN
+	--validaciones
 	IF @id is NULL
 		begin
 			raiserror('Id invalida',16,1);
@@ -283,7 +324,7 @@ BEGIN
         RAISERROR ('id no existe', 16, 1);
         RETURN;
     END
-
+	--termina validacion
 	delete factura.pago where id_pago = @id
 END;
 go
@@ -304,7 +345,7 @@ CREATE PROCEDURE socio.insertar_socio
     @id_categoria VARCHAR(50)
 AS
 BEGIN
-    -- Validaciones básicas
+	--validaciones
     IF @dni IS NULL OR LEN(@dni) = 0 BEGIN
         RAISERROR ('El DNI no puede estar vacío.', 16, 1);
         RETURN;
@@ -317,7 +358,7 @@ BEGIN
         RAISERROR ('El apellido no puede estar vacío.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     INSERT INTO socio.socio (dni, nombre, apellido, email, fecha_nacimiento, telefono_contacto, telefono_emergencia, cobertura_medica, nro_cobertura_medica, id_medio_de_pago, id_grupo_familiar, id_categoria)
     VALUES (@dni, @nombre, @apellido, @email, @fecha_nacimiento, @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica, @id_medio_de_pago, @id_grupo_familiar, @id_categoria);
 END;
@@ -336,11 +377,12 @@ CREATE PROCEDURE socio.modificar_socio
     @id_categoria VARCHAR(50)
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio) BEGIN
         RAISERROR ('El socio no existe.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     UPDATE socio.socio
     SET email = @email,
         telefono_contacto = @telefono_contacto,
@@ -359,11 +401,12 @@ CREATE PROCEDURE socio.eliminar_socio
     @id_socio INT
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio) BEGIN
         RAISERROR ('El socio no existe.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     DELETE FROM socio.socio WHERE id_socio = @id_socio;
 END;
 GO
@@ -377,6 +420,7 @@ CREATE PROCEDURE socio.insertar_membresia
     @costo NUMERIC(15,2)
 AS
 BEGIN
+	--validaciones
     SET NOCOUNT ON;
 
     IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio)
@@ -398,7 +442,7 @@ BEGIN
         RAISERROR('El costo debe ser mayor a cero.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     INSERT INTO socio.membresia (id_socio, fecha_inicio, fecha_renovada, fecha_fin, costo)
     VALUES (@id_socio, @fecha_inicio, @fecha_renovada, @fecha_fin, @costo);
 END;
@@ -411,6 +455,7 @@ go
     @costo NUMERIC(15,2)
 AS
 BEGIN
+	--validaciones
     SET NOCOUNT ON;
 
     IF NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia)
@@ -434,7 +479,7 @@ BEGIN
         RAISERROR('El costo debe ser mayor a cero.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     UPDATE socio.membresia
     SET fecha_renovada = @fecha_renovada,
         fecha_fin = @fecha_fin,
@@ -442,11 +487,13 @@ BEGIN
     WHERE id_membresia = @id_membresia;
 END;
 go
+
 -------eliminar
 CREATE PROCEDURE socio.borrar_membresia
     @id_membresia INT
 AS
 BEGIN
+	--validaciones
     SET NOCOUNT ON;
 
     IF NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia)
@@ -460,7 +507,7 @@ BEGIN
         RAISERROR('No se puede eliminar la membresía: tiene facturas asociadas.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     DELETE FROM socio.membresia
     WHERE id_membresia = @id_membresia;
 END;
@@ -473,7 +520,7 @@ CREATE PROCEDURE socio.insertar_cuenta
     @fecha_vigencia_contrasenia DATE
 AS
 BEGIN
-    -- Validaciones básicas
+	--validaciones
     IF LEN(@usuario) = 0 BEGIN
         RAISERROR ('El nombre de usuario no puede estar vacío.', 16, 1);
         RETURN;
@@ -490,7 +537,7 @@ BEGIN
         RAISERROR ('Debe especificar la fecha de vigencia de la contraseña.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     INSERT INTO socio.cuenta (usuario, contrasenia, rol, fecha_vigencia_contrasenia)
     VALUES (@usuario, @contrasenia, @rol, @fecha_vigencia_contrasenia);
 END;
@@ -503,6 +550,7 @@ CREATE PROCEDURE socio.modificar_cuenta
     @fecha_vigencia_contrasenia DATE
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.cuenta WHERE id_usuario = @id_usuario) BEGIN
         RAISERROR ('La cuenta no existe.', 16, 1);
         RETURN;
@@ -519,7 +567,7 @@ BEGIN
         RAISERROR ('Debe especificar la fecha de vigencia de la contraseña.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     UPDATE socio.cuenta
     SET contrasenia = @contrasenia,
         rol = @rol,
@@ -532,11 +580,12 @@ CREATE PROCEDURE socio.eliminar_cuenta
     @id_usuario INT
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.cuenta WHERE id_usuario = @id_usuario) BEGIN
         RAISERROR ('La cuenta no existe.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     DELETE FROM socio.cuenta WHERE id_usuario = @id_usuario;
 END;
 GO
@@ -551,7 +600,7 @@ CREATE PROCEDURE socio.insertar_grupo_familiar
     @parentesco VARCHAR(50)
 AS
 BEGIN
-    -- Validaciones básicas
+	--validaciones
     IF LEN(@dni) < 7 BEGIN
         RAISERROR('El DNI debe tener al menos 7 caracteres.', 16, 1);
         RETURN;
@@ -561,7 +610,7 @@ BEGIN
         RAISERROR('El DNI ya está registrado.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     INSERT INTO socio.grupo_familiar (
         nombre, apellido, dni, email, fecha_nacimiento, telefono, parentesco
     )
@@ -581,11 +630,12 @@ CREATE PROCEDURE socio.modificar_grupo_familiar
     @parentesco VARCHAR(50)
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.grupo_familiar WHERE id_grupo_familiar = @id_grupo_familiar) BEGIN
         RAISERROR('El grupo familiar no existe.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     UPDATE socio.grupo_familiar
     SET email = @email,
         telefono = @telefono,
@@ -601,11 +651,12 @@ CREATE PROCEDURE socio.eliminar_grupo_familiar
     @id_grupo_familiar INT
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.grupo_familiar WHERE id_grupo_familiar = @id_grupo_familiar) BEGIN
         RAISERROR('El grupo familiar no existe.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     DELETE FROM socio.grupo_familiar
     WHERE id_grupo_familiar = @id_grupo_familiar;
 END;
@@ -639,7 +690,7 @@ BEGIN
         RAISERROR('El costo debe ser mayor a cero.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     INSERT INTO socio.membresia (id_socio, fecha_inicio, fecha_renovada, fecha_fin, costo)
     VALUES (@id_socio, @fecha_inicio, @fecha_renovada, @fecha_fin, @costo);
 END;
@@ -676,7 +727,7 @@ BEGIN
         RAISERROR('El costo debe ser mayor a cero.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     UPDATE socio.membresia
     SET fecha_renovada = @fecha_renovada,
         fecha_fin = @fecha_fin,
@@ -692,11 +743,12 @@ CREATE PROCEDURE socio.eliminar_membresia
     @id_membresia INT
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia) BEGIN
         RAISERROR('La membresía no existe.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     DELETE FROM socio.membresia WHERE id_membresia = @id_membresia;
 END;
 GO
@@ -711,6 +763,7 @@ CREATE PROCEDURE socio.insertar_categoria_socio
     @costo INT
 AS
 BEGIN
+	--validaciones
     IF @edad_min < 0 OR @edad_max < 0 BEGIN
         RAISERROR('Las edades no pueden ser negativas.', 16, 1);
         RETURN;
@@ -728,7 +781,7 @@ BEGIN
         RAISERROR('La categoría ya existe.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     INSERT INTO socio.categoria_socio (nombre, edad_min, edad_max, costo)
     VALUES (@nombre, @edad_min, @edad_max, @costo);
 END;
@@ -744,6 +797,7 @@ CREATE PROCEDURE socio.modificar_categoria_socio
     @costo INT
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.categoria_socio WHERE nombre = @nombre) BEGIN
         RAISERROR('La categoría no existe.', 16, 1);
         RETURN;
@@ -760,7 +814,7 @@ BEGIN
         RAISERROR('El costo debe ser mayor a cero.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     UPDATE socio.categoria_socio
     SET edad_min = @edad_min,
         edad_max = @edad_max,
@@ -776,11 +830,12 @@ CREATE PROCEDURE socio.eliminar_categoria_socio
     @nombre VARCHAR(50)
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.categoria_socio WHERE nombre = @nombre) BEGIN
         RAISERROR('La categoría no existe.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     DELETE FROM socio.categoria_socio WHERE nombre = @nombre;
 END;
 GO
@@ -794,11 +849,13 @@ CREATE PROCEDURE actividad.insertar_actividad
     @costo_mensual NUMERIC(15,2)
 AS
 BEGIN
+	--validaciones
 	IF @costo_mensual is NULL or @costo_mensual < 0
 	begin
 		raiserror('Costo invalido',16,1);
 		return
 	end
+	--termina validacion
     INSERT INTO actividad.actividad (nombre, costo_mensual)
     VALUES (@nombre, @costo_mensual);
 END;
@@ -813,6 +870,7 @@ CREATE PROCEDURE actividad.modificar_actividad
     @costo_mensual NUMERIC(15,2)
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM actividad.actividad WHERE id_actividad = @id)
     BEGIN
         RAISERROR('Actividad no encontrada.', 16, 1);
@@ -823,6 +881,7 @@ BEGIN
 		raiserror('Costo invalido',16,1);
 		return
 	end
+	--termina validacion
     UPDATE actividad.actividad
     SET nombre = @nombre, costo_mensual = @costo_mensual
     WHERE id_actividad = @id;
@@ -835,11 +894,13 @@ CREATE PROCEDURE actividad.borrar_actividad
     @id INT
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM actividad.actividad WHERE id_actividad = @id)
     BEGIN
         RAISERROR('Actividad no encontrada.', 16, 1);
         RETURN;
     END
+	--termina validacion
     DELETE FROM actividad.actividad WHERE id_actividad = @id;
 END;
 GO
@@ -852,6 +913,7 @@ CREATE PROCEDURE actividad.insertar_actividad_extra
     @costo_menor NUMERIC(15,2)
 AS
 BEGIN
+	--validaciones
     IF @costo_adulto IS NULL OR @costo_adulto < 0
     BEGIN
         RAISERROR('Costo de adulto inválido.', 16, 1);
@@ -863,7 +925,7 @@ BEGIN
         RAISERROR('Costo de menor inválido.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     INSERT INTO actividad.actividad_extra (nombre, costo_adulto, costo_menor)
     VALUES (@nombre, @costo_adulto, @costo_menor);
 END;
@@ -878,6 +940,7 @@ CREATE PROCEDURE actividad.modificar_actividad_extra
     @costo_menor NUMERIC(15,2)
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM actividad.actividad_extra WHERE id_actividad_extra = @id)
     BEGIN
         RAISERROR('Actividad extra no encontrada.', 16, 1);
@@ -895,7 +958,7 @@ BEGIN
         RAISERROR('Costo de menor inválido.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     UPDATE actividad.actividad_extra
     SET nombre = @nombre,
         costo_adulto = @costo_adulto,
@@ -910,12 +973,13 @@ CREATE PROCEDURE actividad.borrar_actividad_extra
     @id INT
 AS
 BEGIN
+	--validaciones
     IF NOT EXISTS (SELECT 1 FROM actividad.actividad_extra WHERE id_actividad_extra = @id)
     BEGIN
         RAISERROR('Actividad extra no encontrada.', 16, 1);
         RETURN;
     END
-
+	--termina validacion
     DELETE FROM actividad.actividad_extra
     WHERE id_actividad_extra = @id;
 END;
