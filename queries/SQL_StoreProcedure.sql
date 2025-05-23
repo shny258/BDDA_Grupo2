@@ -6,7 +6,9 @@
 
 --
 
---Procedure insertar, modificar, eliminar factura.medio_De_pago
+-- ==========================================
+-- Insertar Medio de Pago
+-- ==========================================
 Create procedure factura.insertar_medio_de_pago (@nombre varchar(50)) as
 BEGIN
 	IF @nombre is NULL or ltrim(rtrim(@nombre)) = ''
@@ -18,6 +20,10 @@ BEGIN
 	values (@nombre)
 END;
 go
+
+-- ==========================================
+-- Modificar Medio de Pago
+-- ==========================================
 Create procedure factura.modificar_medio_de_pago (@nombre varchar(50), @id int) as
 BEGIN
 	IF @nombre is NULL or ltrim(rtrim(@nombre)) = ''
@@ -31,6 +37,9 @@ BEGIN
 END;
 go
 
+-- ==========================================
+-- Elimianr Medio de Pago
+-- ==========================================
 Create procedure factura.eliminar_medio_de_pago (@id int) as
 BEGIN
 	IF @id is NULL
@@ -42,6 +51,9 @@ BEGIN
 END;
 go
 
+-- ==========================================
+-- Insertar Factura Mensual
+-- ==========================================
 Create procedure factura.insertar_factura_mensual 
 (@fecha_emision date, @fecha_vencimiento date, @estado varchar(20), @total numeric(15,2)) as
 BEGIN
@@ -74,6 +86,9 @@ BEGIN
 END;
 go
 
+-- ==========================================
+-- Modificar Factura Mensual
+-- ==========================================
 Create procedure factura.modificar_factura_mensual 
 (@id int, @fecha_emision date, @fecha_vencimiento date, @estado varchar(20), @total numeric(15,2)) as
 BEGIN
@@ -94,6 +109,9 @@ BEGIN
 END;
 go
 
+-- ==========================================
+-- Eliminar Factura Mensual
+-- ==========================================
 Create procedure factura.eliminicar_factura_mensual (@id int) as
 BEGIN
 	IF @id is NULL
