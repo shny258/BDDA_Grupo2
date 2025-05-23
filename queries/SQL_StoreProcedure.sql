@@ -3,36 +3,57 @@
 --número de grupo, nombre de la materia, nombres y DNI de los alumnos. Entregar todo en un zip 
 --(observar las pautas para nomenclatura antes expuestas) mediante la sección de prácticas de MIEL. 
 --Solo uno de los miembros del grupo debe hacer la entrega
-
+use Com5600G02;
+go
 -- ==========================================
 -- Insertar Detalle Factura
 -- ==========================================
-Create procedure factura.insertar_detalle_factura
-(@id_factura int, @id_membresia int, @id_participante int, @id_reserva int, @monto numeric(15,2), @fecha date) as
+CREATE or alter PROCEDURE factura.insertar_detalle_factura
+(
+    @id_factura INT,
+    @id_membresia INT,
+    @id_participante INT,
+    @id_reserva INT,
+    @monto NUMERIC(15,2),
+    @fecha DATE
+)
+AS
 BEGIN
-	--validaciones
-	IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura)
-	or	(NOT EXISTS (SELECT 1 FROM actividad.participante_actividad_extra WHERE id_participante = @id_participante) 
-	and NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia)
-	and NOT EXISTS (SELECT 1 FROM actividad.reserva_sum WHERE id_reserva = @id_reserva))
-	BEGIN
-        RAISERROR ('id no existe', 16, 1);
-        RETURN;
-    END
-	if @monto <= 0 BEGIN
-        RAISERROR ('id no existe', 16, 1);
-        RETURN;
-    END
-	if @fecha is null begin
-        RAISERROR ('fecha es nula', 16, 1);
-        RETURN;
-    END
-	--termina validacion
-	insert into factura.detalle_factura(id_factura, id_membresia, id_participante, id_reserva, monto, fecha)
-	values (@id_factura, @id_membresia, @id_participante, @id_reserva, @monto, @fecha)
+    SET NOCOUNT ON;
 
+    -- Validar existencia de la factura
+    IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura)
+    OR
+    (
+        NOT EXISTS (SELECT 1 FROM actividad.participante_actividad_extra WHERE id_participante = @id_participante)
+        AND NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia)
+        AND NOT EXISTS (SELECT 1 FROM actividad.reserva_sum WHERE id_reserva = @id_reserva)
+    )
+    BEGIN
+        RAISERROR('Factura o alguno de los IDs (participante, membresía, reserva) no existe', 16, 1);
+        RETURN;
+    END
+
+    -- Validar monto positivo
+    IF @monto <= 0 
+    BEGIN
+        RAISERROR('El monto debe ser mayor que cero', 16, 1);
+        RETURN;
+    END
+
+    -- Validar fecha no nula
+    IF @fecha IS NULL 
+    BEGIN
+        RAISERROR('La fecha es nula', 16, 1);
+        RETURN;
+    END
+
+    -- Insertar el detalle
+    INSERT INTO factura.detalle_factura (id_factura, id_membresia, id_participante, id_reserva, monto, fecha)
+    VALUES (@id_factura, @id_membresia, @id_participante, @id_reserva, @monto, @fecha);
 END;
-go
+GO
+
 
 -- ==========================================
 -- Eliminar Detalle Factura
@@ -216,7 +237,7 @@ go
 -- ==========================================
 -- Insertar Factura Mensual
 -- ==========================================
-Create procedure factura.insertar_factura_mensual 
+Create or alter procedure factura.insertar_factura_mensual 
 (@fecha_emision date, @fecha_vencimiento date, @estado varchar(20), @total numeric(15,2)) as
 BEGIN
 	--validaciones
@@ -292,66 +313,122 @@ go
 -- ==========================================
 -- Insertar Pago
 -- ==========================================
-Create procedure factura.insertar_pago
-(@id_factura int, @id_medio_de_pago int, @tipo_pago varchar(20), @fecha_pago date) as
+CREATE OR ALTER PROCEDURE factura.insertar_pago
+(
+    @id_factura INT,
+    @id_medio_de_pago INT,
+    @tipo_pago VARCHAR(20),
+    @fecha_pago DATE,
+    @monto NUMERIC(15,2)
+)
+AS
 BEGIN
-	--validaciones
-	IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura) BEGIN
-        RAISERROR ('id no existe', 16, 1);
+    SET NOCOUNT ON;
+
+    -- Validaciones
+    IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura)
+    BEGIN
+        RAISERROR('id_factura no existe', 16, 1);
         RETURN;
     END
-	IF NOT EXISTS (SELECT 1 FROM factura.medio_de_pago WHERE id_medio_de_pago = @id_medio_de_pago) BEGIN
-        RAISERROR ('id no existe', 16, 1);
+
+    IF NOT EXISTS (SELECT 1 FROM factura.medio_de_pago WHERE id_medio_de_pago = @id_medio_de_pago)
+    BEGIN
+        RAISERROR('id_medio_de_pago no existe', 16, 1);
         RETURN;
     END
-	IF @fecha_pago is NULL
-	begin
-		raiserror('Fecha invalido',16,1);
-		return
-	end
-	IF @tipo_pago is NULL or ltrim(rtrim(@tipo_pago)) = ''
-	begin
-		raiserror('tipo_pago invalido',16,1);
-		return
-	end
-	--termina validacion
-	insert into factura.pago(id_factura, id_medio_de_pago, tipo_pago, fecha_pago )
-	values (@id_factura, @id_medio_de_pago, @tipo_pago, @fecha_pago)
+
+    IF @fecha_pago IS NULL
+    BEGIN
+        RAISERROR('Fecha inválida', 16, 1);
+        RETURN;
+    END
+
+    IF @tipo_pago IS NULL OR LTRIM(RTRIM(@tipo_pago)) = ''
+    BEGIN
+        RAISERROR('tipo_pago inválido', 16, 1);
+        RETURN;
+    END
+
+    IF @monto <= 0
+    BEGIN
+        RAISERROR('Monto debe ser mayor que cero', 16, 1);
+        RETURN;
+    END
+
+    -- Insertar
+    INSERT INTO factura.pago (id_factura, id_medio_de_pago, tipo_pago, fecha_pago, monto)
+    VALUES (@id_factura, @id_medio_de_pago, @tipo_pago, @fecha_pago, @monto);
 END;
-go
+GO
+
 
 -- ==========================================
 -- Modificar Pago
 -- ==========================================
-Create procedure factura.modificar_pago 
-(@id_pago int, @id_factura int, @id_medio_de_pago int, @tipo_pago varchar(20), @fecha_pago date) as
+CREATE or alter PROCEDURE factura.modificar_pago 
+(
+    @id_pago INT,
+    @id_factura INT,
+    @id_medio_de_pago INT,
+    @tipo_pago VARCHAR(20),
+    @fecha_pago DATE
+)
+AS
 BEGIN
-	--validaciones
-	IF @id_pago is NULL
-	begin
-		raiserror('id invalido.',16,1);
-		return
-	end
-	IF NOT EXISTS (SELECT 1 FROM factura.pago WHERE id_pago = @id_pago) BEGIN
-        RAISERROR ('id no existe', 16, 1);
+    SET NOCOUNT ON;
+
+    -- Validar id_pago
+    IF @id_pago IS NULL OR @id_pago <= 0
+    BEGIN
+        RAISERROR('ID pago inválido.', 16, 1);
         RETURN;
     END
-	IF @fecha_pago is NULL
-	begin
-		raiserror('Fecha invalido',16,1);
-		return
-	end
-	IF @tipo_pago is NULL or ltrim(rtrim(@tipo_pago)) = ''
-	begin
-		raiserror('tipo_pago invalido',16,1);
-		return
-	end
-	--termina validacion
-	update factura.pago
-	set id_factura = @id_factura, id_medio_de_pago = @id_medio_de_pago, tipo_pago = @tipo_pago, fecha_pago = @fecha_pago
-	where id_pago = @id_pago
+
+    IF NOT EXISTS (SELECT 1 FROM factura.pago WHERE id_pago = @id_pago)
+    BEGIN
+        RAISERROR('ID pago no existe.', 16, 1);
+        RETURN;
+    END
+
+    -- Validar existencia factura
+    IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura)
+    BEGIN
+        RAISERROR('ID factura no existe.', 16, 1);
+        RETURN;
+    END
+
+    -- Validar existencia medio de pago
+    IF NOT EXISTS (SELECT 1 FROM factura.medio_de_pago WHERE id_medio_de_pago = @id_medio_de_pago)
+    BEGIN
+        RAISERROR('ID medio de pago no existe.', 16, 1);
+        RETURN;
+    END
+
+    -- Validar fecha
+    IF @fecha_pago IS NULL
+    BEGIN
+        RAISERROR('Fecha inválida.', 16, 1);
+        RETURN;
+    END
+
+    -- Validar tipo_pago
+    IF @tipo_pago IS NULL OR LTRIM(RTRIM(@tipo_pago)) = ''
+    BEGIN
+        RAISERROR('Tipo de pago inválido.', 16, 1);
+        RETURN;
+    END
+
+    -- Actualizar registro
+    UPDATE factura.pago
+    SET id_factura = @id_factura,
+        id_medio_de_pago = @id_medio_de_pago,
+        tipo_pago = @tipo_pago,
+        fecha_pago = @fecha_pago
+    WHERE id_pago = @id_pago;
 END;
-go
+GO
+
 
 -- ==========================================
 -- Eliminar Pago
@@ -497,7 +574,7 @@ GO
 -- ==========================================
 -- Modificar Cuenta
 -- ==========================================
-CREATE PROCEDURE socio.modificar_cuenta
+CREATE or alter PROCEDURE socio.modificar_cuenta
     @id_usuario INT,
     @contrasenia VARCHAR(255),
     @rol VARCHAR(50),
@@ -509,7 +586,7 @@ BEGIN
         RAISERROR ('La cuenta no existe.', 16, 1);
         RETURN;
     END
-    IF LEN(@contrasenia) < 60 BEGIN
+    IF LEN(@contrasenia) < 10 BEGIN
         RAISERROR ('la contraseña debe tener al menos 10 caracteres.', 16, 1);
         RETURN;
     END
@@ -950,9 +1027,12 @@ GO
 -- ==========================================
 CREATE PROCEDURE actividad.insertar_inscripcion_actividad
     @id_socio INT,
-    @id_actividad INT
+    @id_actividad INT,
+    @fecha_inscripcion DATE
 AS
 BEGIN
+    SET NOCOUNT ON;
+
     -- Validar existencia del socio
     IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio)
     BEGIN
@@ -967,19 +1047,30 @@ BEGIN
         RETURN;
     END
 
+    -- Validar si ya está inscripto
     IF EXISTS (
         SELECT 1 FROM actividad.inscripcion_actividad
         WHERE id_socio = @id_socio AND id_actividad = @id_actividad
     )
     BEGIN
-        RAISERROR('El socio ya esta inscripto en la actividad', 16, 1);
+        RAISERROR('El socio ya está inscripto en la actividad', 16, 1);
         RETURN;
     END
 
-    INSERT INTO actividad.inscripcion_actividad (id_socio, id_actividad)
-    VALUES (@id_socio, @id_actividad);
+    -- Validar que la fecha no sea nula
+    IF @fecha_inscripcion IS NULL
+    BEGIN
+        RAISERROR('Debe especificar una fecha de inscripción', 16, 1);
+        RETURN;
+    END
+
+    -- Insertar la inscripción con fecha
+    INSERT INTO actividad.inscripcion_actividad (id_socio, id_actividad, fecha_inscripcion)
+    VALUES (@id_socio, @id_actividad, @fecha_inscripcion);
 END;
 GO
+
+
 
 -- ==========================================
 -- ELIMINAR INSCRIPCION ACTIVIDAD
@@ -1010,29 +1101,43 @@ GO
 CREATE PROCEDURE actividad.modificar_inscripcion_actividad
     @id_socio INT,
     @id_actividad INT,
-    @nueva_fecha DATE
+    @fecha_inscripcion DATE
 AS
 BEGIN
+    -- Validar existencia de la inscripción
     IF NOT EXISTS (
         SELECT 1 FROM actividad.inscripcion_actividad
         WHERE id_socio = @id_socio AND id_actividad = @id_actividad
     )
     BEGIN
-        RAISERROR('Inscripcion no encontrada', 16, 1);
+        RAISERROR('Inscripción no encontrada', 16, 1);
         RETURN;
     END
 
-    IF @nueva_fecha IS NULL
+    -- Validar que se haya proporcionado una fecha
+    IF  @fecha_inscripcion IS NULL
     BEGIN
         RAISERROR('Error con la fecha ingresada', 16, 1);
         RETURN;
     END
 
+    -- (Opcional) Validar que no sea la misma fecha que ya está registrada
+    IF EXISTS (
+        SELECT 1 FROM actividad.inscripcion_actividad
+        WHERE id_socio = @id_socio AND id_actividad = @id_actividad AND fecha_inscripcion =  @fecha_inscripcion
+    )
+    BEGIN
+        RAISERROR('La nueva fecha es igual a la actual.', 16, 1);
+        RETURN;
+    END
+
+    -- Actualizar la inscripción con la nueva fecha
     UPDATE actividad.inscripcion_actividad
-    SET fecha_inscripcion = @nueva_fecha
+    SET fecha_inscripcion =  @fecha_inscripcion
     WHERE id_socio = @id_socio AND id_actividad = @id_actividad;
 END;
 GO
+
 
 
 -- ==========================================

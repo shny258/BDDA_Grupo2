@@ -95,8 +95,8 @@ CREATE TABLE actividad.actividad_extra (
 CREATE TABLE actividad.inscripcion_actividad (
     id_socio INT REFERENCES socio.socio(id_socio),
     id_actividad INT REFERENCES actividad.actividad(id_actividad),
-	fecha_inscripcion date not null,
-	PRIMARY KEY (id_socio, id_actividad),
+    fecha_inscripcion DATE NOT NULL,
+    PRIMARY KEY (id_socio, id_actividad)
 );
 
 -- Participación en actividades extra
@@ -158,3 +158,11 @@ CREATE TABLE factura.pago (
     tipo_pago VARCHAR(20) -- Ej: "Pago completo", "Reembolso", "Pago a cuenta"
 );
 
+USE Com5600G02;
+GO
+SELECT * 
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = 'actividad'
+  AND TABLE_NAME = 'inscripcion_actividad';
+
+  DROP TABLE IF EXISTS actividad.inscripcion_actividad;
