@@ -1047,7 +1047,7 @@ GO
 -- ==========================================
 -- MODIFICAR INSCRIPCION ACTIVIDAD
 -- ==========================================
-CREATE PROCEDURE actividad.modificar_fecha_inscripcion_actividad
+CREATE PROCEDURE actividad.modificar_inscripcion_actividad
     @id_socio INT,
     @id_actividad INT,
     @nueva_fecha DATE
@@ -1182,5 +1182,101 @@ BEGIN
     END
 
     DELETE FROM actividad.reserva_sum WHERE id_reserva = @id_reserva;
+END;
+GO
+
+
+-- ==========================================
+--  INSERTAR PARTICIPANTE
+-- ==========================================
+CREATE PROCEDURE actividad.insertar_participante_actividad_extra
+    @id_socio INT,
+    @id_actividad_extra INT,
+    @tipo_participante VARCHAR(1)
+AS
+BEGIN
+ 
+    IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio)
+    BEGIN
+        RAISERROR('Socio no encontrado', 16, 1);
+        RETURN;
+    END
+
+    IF NOT EXISTS (SELECT 1 FROM actividad.actividad_extra WHERE id_actividad_extra = @id_actividad_extra)
+    BEGIN
+        RAISERROR('Actividad extra no encontrada', 16, 1);
+        RETURN;
+    END
+
+    IF @tipo_participante NOT IN ('S', 'I') -- Socio o Invitado
+    BEGIN
+        RAISERROR('Tipo de participante erroneo.Ingrese S (socio) o I (invitado)', 16, 1);
+        RETURN;
+    END
+
+    INSERT INTO actividad.participante_actividad_extra (id_socio, id_actividad_extra, tipo_participante)
+    VALUES (@id_socio, @id_actividad_extra, @tipo_participante);
+END;
+GO
+
+-- ==========================================
+--  MODIFICAR PARTICIPANTE
+-- ==========================================
+CREATE PROCEDURE actividad.modificar_participante_actividad_extra
+    @id_participante INT,
+    @id_socio INT,
+    @id_actividad_extra INT,
+    @tipo_participante VARCHAR(1)
+AS
+BEGIN
+    
+    IF NOT EXISTS (SELECT 1 FROM actividad.participante_actividad_extra WHERE id_participante = @id_participante)
+    BEGIN
+        RAISERROR('Participante no encontrado', 16, 1);
+        RETURN;
+    END
+
+    IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio)
+    BEGIN
+        RAISERROR('Socio no encontrado', 16, 1);
+        RETURN;
+    END
+
+    IF NOT EXISTS (SELECT 1 FROM actividad.actividad_extra WHERE id_actividad_extra = @id_actividad_extra)
+    BEGIN
+        RAISERROR('Actividad extra no encontrada', 16, 1);
+        RETURN;
+    END
+
+    IF @tipo_participante NOT IN ('S', 'I')
+    BEGIN
+        RAISERROR('Tipo de participante invalido.Ingrese S (socio) o I (invitado)', 16, 1);
+        RETURN;
+    END
+
+    UPDATE actividad.participante_actividad_extra
+    SET id_socio = @id_socio,
+        id_actividad_extra = @id_actividad_extra,
+        tipo_participante = @tipo_participante
+    WHERE id_participante = @id_participante;
+END;
+GO
+
+-- ==========================================
+--  ELIMINAR PARTICIPANTE
+-- ==========================================
+
+CREATE PROCEDURE actividad.borrar_participante_actividad_extra
+    @id_participante INT
+AS
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM actividad.participante_actividad_extra WHERE id_participante = @id_participante)
+    BEGIN
+        RAISERROR('Participante no encontrado', 16, 1);
+        RETURN;
+    END
+
+    DELETE FROM actividad.participante_actividad_extra
+    WHERE id_participante = @id_participante;
 END;
 GO
