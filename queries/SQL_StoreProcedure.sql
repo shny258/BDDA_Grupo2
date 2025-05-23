@@ -30,6 +30,7 @@ BEGIN
 	where id_medio_de_pago = @id
 END;
 go
+
 Create procedure factura.eliminar_medio_de_pago (@id int) as
 BEGIN
 	IF @id is NULL
@@ -39,6 +40,75 @@ BEGIN
 		end
 	delete factura.medio_de_pago where id_medio_de_pago = @id
 END;
+go
+
+Create procedure factura.insertar_factura_mensual 
+(@fecha_emision date, @fecha_vencimiento date, @estado varchar(20), @total numeric(15,2)) as
+BEGIN
+--validaciones
+	IF @estado is NULL or ltrim(rtrim(@nombre)) = ''
+	begin
+		raiserror('Estado invalido',16,1);
+		return
+	end
+	IF @total is NULL or @total < 0
+	begin
+		raiserror('Monto invalido',16,1);
+		return
+	end
+	IF @fecha_emision is NULL
+	begin
+		raiserror('Fecha invalido',16,1);
+		return
+	end
+	IF @fecha_vencimiento is NULL
+	begin
+		raiserror('Fecha invalido',16,1);
+		return
+	end
+--
+--mas validaciones tal vez
+
+	insert into factura.factura_mensual(fecha_emision, fecha_vencimiento, estado, total)
+	values (@fecha_emision, @fecha_vencimiento, @estado, @total)
+END;
+go
+
+Create procedure factura.modificar_factura_mensual 
+(@id int, @fecha_emision date, @fecha_vencimiento date, @estado varchar(20), @total numeric(15,2)) as
+BEGIN
+--validaciones
+	IF @id is NULL
+	begin
+		raiserror('id invalido.',16,1);
+		return
+	end
+	IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id) BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+--termina validacion
+	update factura.factura_mensual
+	set fecha_emision = @fecha_emision, fecha_vencimiento = @fecha_vencimiento, estado = @estado, total = @total
+	where id_factura = @id
+END;
+go
+
+Create procedure factura.eliminicar_factura_mensual (@id int) as
+BEGIN
+	IF @id is NULL
+		begin
+			raiserror('Id invalida',16,1);
+			return
+		end
+	IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id) BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+
+	delete factura.medio_de_pago where id_medio_de_pago = @id
+END;
+go
 ------------SOCIO----------------------
 CREATE PROCEDURE socio.insertar_socio
     @dni VARCHAR(15),
@@ -153,6 +223,7 @@ BEGIN
     INSERT INTO socio.membresia (id_socio, fecha_inicio, fecha_renovada, fecha_fin, costo)
     VALUES (@id_socio, @fecha_inicio, @fecha_renovada, @fecha_fin, @costo);
 END;
+go
  --modificar
  CREATE PROCEDURE socio.modificar_membresia
     @id_membresia INT,
@@ -191,6 +262,7 @@ BEGIN
         costo = @costo
     WHERE id_membresia = @id_membresia;
 END;
+go
 -------eliminar
 CREATE PROCEDURE socio.borrar_membresia
     @id_membresia INT
@@ -213,12 +285,13 @@ BEGIN
     DELETE FROM socio.membresia
     WHERE id_membresia = @id_membresia;
 END;
+go
 
 CREATE PROCEDURE socio.insertar_cuenta
     @usuario VARCHAR(50),
     @contrasenia VARCHAR(50),
     @rol VARCHAR(50),
-    @fecha_vigencia_contraseña DATE
+    @fecha_vigencia_contrasenia DATE
 AS
 BEGIN
     -- Validaciones básicas
