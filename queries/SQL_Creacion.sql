@@ -95,7 +95,8 @@ CREATE TABLE actividad.actividad_extra (
 CREATE TABLE actividad.inscripcion_actividad (
     id_socio INT REFERENCES socio.socio(id_socio),
     id_actividad INT REFERENCES actividad.actividad(id_actividad),
-    PRIMARY KEY (id_socio, id_actividad)
+	fecha_inscripcion date not null,
+	PRIMARY KEY (id_socio, id_actividad),
 );
 
 -- Participación en actividades extra
