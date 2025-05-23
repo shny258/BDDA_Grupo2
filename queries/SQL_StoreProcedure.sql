@@ -109,6 +109,91 @@ BEGIN
 	delete factura.medio_de_pago where id_medio_de_pago = @id
 END;
 go
+
+-- ==========================================
+-- Insertar Pago
+-- ==========================================
+Create procedure factura.insertar_pago
+(@id_factura int, @id_medio_de_pago int, @tipo_pago varchar(20), @fecha_pago date) as
+BEGIN
+--validaciones
+	IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura) BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+	IF NOT EXISTS (SELECT 1 FROM factura.medio_de_pago WHERE id_medio_de_pago = @id_medio_de_pago) BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+	IF @fecha_pago is NULL
+	begin
+		raiserror('Fecha invalido',16,1);
+		return
+	end
+	IF @tipo_pago is NULL or ltrim(rtrim(@tipo_pago)) = ''
+	begin
+		raiserror('tipo_pago invalido',16,1);
+		return
+	end
+--
+--mas validaciones tal vez
+	insert into factura.pago(id_factura, id_medio_de_pago, tipo_pago, fecha_pago )
+	values (@id_factura, @id_medio_de_pago, @tipo_pago, @fecha_pago)
+END;
+go
+
+-- ==========================================
+-- Modificar Pago
+-- ==========================================
+Create procedure factura.modificar_pago 
+(@id_pago int, @id_factura int, @id_medio_de_pago int, @tipo_pago varchar(20), @fecha_pago date) as
+BEGIN
+--validaciones
+	IF @id_pago is NULL
+	begin
+		raiserror('id invalido.',16,1);
+		return
+	end
+	IF NOT EXISTS (SELECT 1 FROM factura.pago WHERE id_pago = @id_pago) BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+	IF @fecha_pago is NULL
+	begin
+		raiserror('Fecha invalido',16,1);
+		return
+	end
+	IF @tipo_pago is NULL or ltrim(rtrim(@tipo_pago)) = ''
+	begin
+		raiserror('tipo_pago invalido',16,1);
+		return
+	end
+--termina validacion
+	update factura.pago
+	set id_factura = @id_factura, id_medio_de_pago = @id_medio_de_pago, tipo_pago = @tipo_pago, fecha_pago = @fecha_pago
+	where id_pago = @id_pago
+END;
+go
+
+-- ==========================================
+-- Eliminar Pago
+-- ==========================================
+Create procedure factura.eliminicar_pago (@id int) as
+BEGIN
+	IF @id is NULL
+		begin
+			raiserror('Id invalida',16,1);
+			return
+		end
+	IF NOT EXISTS (SELECT 1 FROM factura.pago WHERE id_pago = @id) BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+
+	delete factura.pago where id_pago = @id
+END;
+go
+
 ------------SOCIO----------------------
 CREATE PROCEDURE socio.insertar_socio
     @dni VARCHAR(15),
