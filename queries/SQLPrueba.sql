@@ -1,56 +1,41 @@
 ﻿-- ==========================================
--- Pruebas para detalle_factura
--- ==========================================
-use Com5600G02
-go
--- Caso correcto: Insertar Detalle Factura
-EXEC factura.insertar_detalle_factura 
-    @id_factura = 1,           
-    @id_membresia = 3,         
-    @id_participante = NULL,   
-    @id_reserva = NULL,        
-    @monto = 5000.00, 
-    @fecha = '2025-05-01';
-
-	
--- Caso incorrecto: Insertar Detalle Factura (factura y demas datos no existen)
-EXEC factura.insertar_detalle_factura 
-    @id_factura = -99, 
-    @id_membresia = -99, 
-    @id_participante = -99, 
-    @id_reserva = -99, 
-    @monto = -100.00, 
-    @fecha = NULL;
-
-
--- Caso correcto: Eliminar Detalle Factura
--- Asegurarse que exista un detalle_factura con id 11 antes de ejecutar esto
-EXEC factura.eliminar_detalle_factura @id_detallefactura = 11;
-
--- Caso incorrecto: Eliminar Detalle Factura
-EXEC factura.eliminar_detalle_factura @id_detallefactura = -1;
-
-
--- ==========================================
--- Pruebas para aplica_descuento
+-- Pruebas para cuenta
 -- ==========================================
 
-EXEC factura.insertar_aplica_descuento 
-    @id_descuento = 2, 
-    @id_detallefactura = 7;
+-- ✅ INSERTAR CUENTA - CORRECTO
+EXEC socio.insertar_cuenta 
+    @usuario = 'jpruebab',
+    @contrasenia = 'claveSegura123',
+    @rol = 'socio',
+    @fecha_vigencia_contrasenia = '2025-12-31';
 
-	--incorrecto id inexistente
-	EXEC factura.insertar_aplica_descuento 
-    @id_descuento = -1, 
-    @id_detallefactura = -1;
-	--correcto eliminar
-	EXEC factura.eliminar_aplica_descuento 
-    @id_descuento = 2, 
-    @id_detallefactura = 7;
-	--incorrecto
-	EXEC factura.eliminar_aplica_descuento 
-    @id_descuento = -1, 
-    @id_detallefactura = -1;
+-- ❌ INSERTAR CUENTA - ERROR (rol inválido)
+EXEC socio.insertar_cuenta 
+    @usuario = 'jprueba2',
+    @contrasenia = 'claveSegura123',
+    @rol = 'usuario',
+    @fecha_vigencia_contrasenia = '2025-12-31';
+
+-- ✅ MODIFICAR CUENTA - CORRECTO (usar id_usuario válido, ej: 4)
+EXEC socio.modificar_cuenta 
+    @id_usuario = 6,
+    @contrasenia = 'claveSeguraReforzada33333',
+    @rol = 'socio',
+    @fecha_vigencia_contrasenia = '2026-01-01';
+
+-- ❌ MODIFICAR CUENTA - ERROR (contrasenia demasiado corta para modificación)
+EXEC socio.modificar_cuenta 
+    @id_usuario = 1,
+    @contrasenia = 'corta',
+    @rol = 'socio',
+    @fecha_vigencia_contrasenia = '2026-01-01';
+
+-- ✅ ELIMINAR CUENTA - CORRECTO (usar id válido, ej: 1)
+EXEC socio.eliminar_cuenta @id_usuario = 6;
+
+-- ❌ ELIMINAR CUENTA - ERROR (id inexistente)
+EXEC socio.eliminar_cuenta @id_usuario = 9999;
+
 -- ==========================================
 -- Pruebas para medio_pago
 -- ==========================================
@@ -81,25 +66,118 @@ EXEC factura.eliminar_medio_de_pago
     @id = -1;
 
 -- ==========================================
--- Pruebas para descuento
+-- Pruebas para categoria_socio
 -- ==========================================
--- ✅ INSERTAR DESCUENTO - CORRECTO
-EXEC factura.insertar_descuento @nombre = 'Promo 10%', @porcentaje = 10;
 
--- ❌ INSERTAR DESCUENTO - ERROR (porcentaje inválido)
-EXEC factura.insertar_descuento @nombre = 'Error Porcentaje', @porcentaje = -5;
+-- ✅ INSERTAR CATEGORÍA SOCIO - CORRECTO
+EXEC socio.insertar_categoria_socio 
+    @nombre = 'mayor',
+    @edad_min = 18,
+    @edad_max = 60,
+    @costo = 3000;
 
--- ✅ MODIFICAR DESCUENTO - CORRECTO (usar un ID válido existente en tu base, ej: 1)
-EXEC factura.modificar_descuento @id_descuento = 2, @nombre = 'Promo 15%', @porcentaje = 15;
+-- ❌ INSERTAR CATEGORÍA SOCIO - ERROR (edad_max < edad_min)
+EXEC socio.insertar_categoria_socio 
+    @nombre = 'errorEdad',
+    @edad_min = 60,
+    @edad_max = 18,
+    @costo = 3000;
 
--- ❌ MODIFICAR DESCUENTO - ERROR (ID no existe)
-EXEC factura.modificar_descuento @id_descuento = 9999, @nombre = 'Error', @porcentaje = 20;
+-- ✅ MODIFICAR CATEGORÍA SOCIO - CORRECTO (usar nombre existente, ej: 'mayor')
+EXEC socio.modificar_categoria_socio 
+    @nombre = 'mayor',
+    @edad_min = 20,
+    @edad_max = 65,
+    @costo = 3500;
 
--- ✅ ELIMINAR DESCUENTO - CORRECTO (usar un ID válido existente, ej: 5)
-EXEC factura.eliminar_descuento @id = 5;
+-- ❌ MODIFICAR CATEGORÍA SOCIO - ERROR (nombre no existe)
+EXEC socio.modificar_categoria_socio 
+    @nombre = 'inexistente',
+    @edad_min = 20,
+    @edad_max = 65,
+    @costo = 3500;
 
--- ❌ ELIMINAR DESCUENTO - ERROR (ID inexistente)
-EXEC factura.eliminar_descuento @id = 9999;
+-- ✅ ELIMINAR CATEGORÍA SOCIO - CORRECTO (usar nombre existente, ej: 'mayor')
+EXEC socio.eliminar_categoria_socio @nombre = 'mayor';
+
+-- ❌ ELIMINAR CATEGORÍA SOCIO - ERROR (nombre inexistente)
+EXEC socio.eliminar_categoria_socio @nombre = 'noexiste';
+
+-- ==========================================
+-- Pruebas para grupo_familiar
+-- ==========================================
+
+-- ✅ INSERTAR GRUPO FAMILIAR - CORRECTO
+EXEC socio.insertar_grupo_familiar 
+    @nombre = 'Lucía', 
+    @apellido = 'Gómez', 
+    @dni = '23156789', 
+    @email = 'lucia@example.com', 
+    @fecha_nacimiento = '2010-06-15', 
+    @telefono = '1144556677', 
+    @parentesco = 'Hija';
+
+-- ❌ INSERTAR GRUPO FAMILIAR - ERROR (DNI repetido o demasiado corto)
+EXEC socio.insertar_grupo_familiar 
+    @nombre = 'Lucía', 
+    @apellido = 'Gómez', 
+    @dni = '1234', 
+    @email = 'lucia@example.com', 
+    @fecha_nacimiento = '2010-06-15', 
+    @telefono = '1144556677', 
+    @parentesco = 'Hija';
+
+-- ✅ MODIFICAR GRUPO FAMILIAR - CORRECTO (usar id válido, ej: 1)
+EXEC socio.modificar_grupo_familiar 
+    @id_grupo_familiar = 1,
+    @email = 'lucia.actualizada@example.com',
+    @telefono = '1166778899',
+    @parentesco = 'Hija actualizada';
+
+-- ❌ MODIFICAR GRUPO FAMILIAR - ERROR (id inexistente)
+EXEC socio.modificar_grupo_familiar 
+    @id_grupo_familiar = 9999,
+    @email = 'error@example.com',
+    @telefono = '0000000000',
+    @parentesco = 'Error';
+
+-- ✅ ELIMINAR GRUPO FAMILIAR - CORRECTO (usar id válido, ej: 1)
+EXEC socio.eliminar_grupo_familiar @id_grupo_familiar = 1;
+
+-- ❌ ELIMINAR GRUPO FAMILIAR - ERROR (id inexistente)
+EXEC socio.eliminar_grupo_familiar @id_grupo_familiar = 9999;
+
+-- ==========================================
+-- Pruebas para actividad
+-- ==========================================
+
+-- ✅ INSERTAR ACTIVIDAD - CORRECTO
+EXEC actividad.insertar_actividad 
+    @nombre = 'Futsal',
+    @costo_mensual = 2500;
+
+-- ❌ INSERTAR ACTIVIDAD - ERROR (costo negativo)
+EXEC actividad.insertar_actividad 
+    @nombre = 'Spinning',
+    @costo_mensual = -100;
+
+-- ✅ MODIFICAR ACTIVIDAD - CORRECTO (usar ID existente, por ejemplo: 1)
+EXEC actividad.modificar_actividad 
+    @id = 1,
+    @nombre = 'Baile artistico',
+    @costo_mensual = 3000;
+
+-- ❌ MODIFICAR ACTIVIDAD - ERROR (ID inexistente)
+EXEC actividad.modificar_actividad 
+    @id = 999,
+    @nombre = 'Aeróbicos',
+    @costo_mensual = 2000;
+
+-- ✅ BORRAR ACTIVIDAD - CORRECTO (usar ID existente, por ejemplo: 1)
+EXEC actividad.borrar_actividad @id = 1;
+
+-- ❌ BORRAR ACTIVIDAD - ERROR (ID inexistente)
+EXEC actividad.borrar_actividad @id = 999;
 
 -- ==========================================
 -- Pruebas para factura_mensual
@@ -141,46 +219,25 @@ EXEC factura.eliminicar_factura_mensual @id = 1;
 EXEC factura.eliminicar_factura_mensual @id = 9999;
 
 -- ==========================================
--- Pruebas para pago
+-- Pruebas para descuento
 -- ==========================================
--- ✅ INSERTAR PAGO - CORRECTO
-EXEC factura.insertar_pago 
-    @id_factura = 3,
-    @id_medio_de_pago = 1,
-    @tipo_pago = 'Visa',
-    @fecha_pago = '2025-05-23',
-    @monto = 5000;
-	select * from factura.pago
-	
--- ❌ INSERTAR PAGO - ERROR (id_factura inexistente)
-EXEC factura.insertar_pago 
-    @id_factura = 9999,
-    @id_medio_de_pago = 1,
-    @tipo_pago = 'efectivo',
-    @fecha_pago = '2025-05-23',
-    @monto = 5000;
+-- ✅ INSERTAR DESCUENTO - CORRECTO
+EXEC factura.insertar_descuento @nombre = 'Promo 10%', @porcentaje = 10;
 
--- ✅ MODIFICAR PAGO - CORRECTO (usar un id_pago válido, ej: 1)
-EXEC factura.modificar_pago 
-    @id_pago = 8,
-    @id_factura = 1,
-    @id_medio_de_pago = 1,
-    @tipo_pago = 'tarjeta',
-    @fecha_pago = '2025-05-24';
-	
--- ❌ MODIFICAR PAGO - ERROR (id_pago no existe)
-EXEC factura.modificar_pago 
-    @id_pago = 9999,
-    @id_factura = 1,
-    @id_medio_de_pago = 1,
-    @tipo_pago = 'tarjeta',
-    @fecha_pago = '2025-05-24';
+-- ❌ INSERTAR DESCUENTO - ERROR (porcentaje inválido)
+EXEC factura.insertar_descuento @nombre = 'Error Porcentaje', @porcentaje = -5;
 
--- ✅ ELIMINAR PAGO - CORRECTO (usar un id válido, ej: 8)
-EXEC factura.eliminicar_pago @id = 8;
+-- ✅ MODIFICAR DESCUENTO - CORRECTO (usar un ID válido existente en tu base, ej: 1)
+EXEC factura.modificar_descuento @id_descuento = 2, @nombre = 'Promo 15%', @porcentaje = 15;
 
--- ❌ ELIMINAR PAGO - ERROR (id inexistente)
-EXEC factura.eliminicar_pago @id = 9999;
+-- ❌ MODIFICAR DESCUENTO - ERROR (ID no existe)
+EXEC factura.modificar_descuento @id_descuento = 9999, @nombre = 'Error', @porcentaje = 20;
+
+-- ✅ ELIMINAR DESCUENTO - CORRECTO (usar un ID válido existente, ej: 5)
+EXEC factura.eliminar_descuento @id = 5;
+
+-- ❌ ELIMINAR DESCUENTO - ERROR (ID inexistente)
+EXEC factura.eliminar_descuento @id = 9999;
 
 
 -- ==========================================
@@ -248,92 +305,6 @@ EXEC socio.eliminar_socio @id_socio = 1;
 EXEC socio.eliminar_socio @id_socio = 9999;
 
 
-
--- ==========================================
--- Pruebas para cuenta
--- ==========================================
-
--- ✅ INSERTAR CUENTA - CORRECTO
-EXEC socio.insertar_cuenta 
-    @usuario = 'jpruebab',
-    @contrasenia = 'claveSegura123',
-    @rol = 'socio',
-    @fecha_vigencia_contrasenia = '2025-12-31';
-
--- ❌ INSERTAR CUENTA - ERROR (rol inválido)
-EXEC socio.insertar_cuenta 
-    @usuario = 'jprueba2',
-    @contrasenia = 'claveSegura123',
-    @rol = 'usuario',
-    @fecha_vigencia_contrasenia = '2025-12-31';
-
--- ✅ MODIFICAR CUENTA - CORRECTO (usar id_usuario válido, ej: 4)
-EXEC socio.modificar_cuenta 
-    @id_usuario = 6,
-    @contrasenia = 'claveSeguraReforzada33333',
-    @rol = 'socio',
-    @fecha_vigencia_contrasenia = '2026-01-01';
-
--- ❌ MODIFICAR CUENTA - ERROR (contrasenia demasiado corta para modificación)
-EXEC socio.modificar_cuenta 
-    @id_usuario = 1,
-    @contrasenia = 'corta',
-    @rol = 'socio',
-    @fecha_vigencia_contrasenia = '2026-01-01';
-
--- ✅ ELIMINAR CUENTA - CORRECTO (usar id válido, ej: 1)
-EXEC socio.eliminar_cuenta @id_usuario = 6;
-
--- ❌ ELIMINAR CUENTA - ERROR (id inexistente)
-EXEC socio.eliminar_cuenta @id_usuario = 9999;
-
-
-
--- ==========================================
--- Pruebas para grupo_familiar
--- ==========================================
-
--- ✅ INSERTAR GRUPO FAMILIAR - CORRECTO
-EXEC socio.insertar_grupo_familiar 
-    @nombre = 'Lucía', 
-    @apellido = 'Gómez', 
-    @dni = '23156789', 
-    @email = 'lucia@example.com', 
-    @fecha_nacimiento = '2010-06-15', 
-    @telefono = '1144556677', 
-    @parentesco = 'Hija';
-
--- ❌ INSERTAR GRUPO FAMILIAR - ERROR (DNI repetido o demasiado corto)
-EXEC socio.insertar_grupo_familiar 
-    @nombre = 'Lucía', 
-    @apellido = 'Gómez', 
-    @dni = '1234', 
-    @email = 'lucia@example.com', 
-    @fecha_nacimiento = '2010-06-15', 
-    @telefono = '1144556677', 
-    @parentesco = 'Hija';
-
--- ✅ MODIFICAR GRUPO FAMILIAR - CORRECTO (usar id válido, ej: 1)
-EXEC socio.modificar_grupo_familiar 
-    @id_grupo_familiar = 1,
-    @email = 'lucia.actualizada@example.com',
-    @telefono = '1166778899',
-    @parentesco = 'Hija actualizada';
-
--- ❌ MODIFICAR GRUPO FAMILIAR - ERROR (id inexistente)
-EXEC socio.modificar_grupo_familiar 
-    @id_grupo_familiar = 9999,
-    @email = 'error@example.com',
-    @telefono = '0000000000',
-    @parentesco = 'Error';
-
--- ✅ ELIMINAR GRUPO FAMILIAR - CORRECTO (usar id válido, ej: 1)
-EXEC socio.eliminar_grupo_familiar @id_grupo_familiar = 1;
-
--- ❌ ELIMINAR GRUPO FAMILIAR - ERROR (id inexistente)
-EXEC socio.eliminar_grupo_familiar @id_grupo_familiar = 9999;
-
-
 -- ==========================================
 -- Pruebas para membresia
 -- ==========================================
@@ -375,46 +346,41 @@ EXEC socio.eliminar_membresia @id_membresia = 6;
 -- ❌ ELIMINAR MEMBRESÍA - ERROR (id inexistente)
 EXEC socio.eliminar_membresia @id_membresia = 9999;
 
-
 -- ==========================================
--- Pruebas para categoria_socio
+-- Pruebas para reserva_sum
 -- ==========================================
 
--- ✅ INSERTAR CATEGORÍA SOCIO - CORRECTO
-EXEC socio.insertar_categoria_socio 
-    @nombre = 'mayor',
-    @edad_min = 18,
-    @edad_max = 60,
-    @costo = 3000;
+-- ✅ INSERTAR RESERVA SUM - CORRECTO (usar IDs existentes, ej: id_socio = 1, id_actividad_extra = 2)
+EXEC actividad.insertar_reserva_sum 
+    @id_socio = 28,
+    @id_actividad_extra = 2,
+    @fecha_reserva = '2025-06-10';
 
--- ❌ INSERTAR CATEGORÍA SOCIO - ERROR (edad_max < edad_min)
-EXEC socio.insertar_categoria_socio 
-    @nombre = 'errorEdad',
-    @edad_min = 60,
-    @edad_max = 18,
-    @costo = 3000;
+-- ❌ INSERTAR RESERVA SUM - ERROR (fecha ya reservada)
+EXEC actividad.insertar_reserva_sum 
+    @id_socio = 1,
+    @id_actividad_extra = 2,
+    @fecha_reserva = '2025-06-10';
 
--- ✅ MODIFICAR CATEGORÍA SOCIO - CORRECTO (usar nombre existente, ej: 'mayor')
-EXEC socio.modificar_categoria_socio 
-    @nombre = 'mayor',
-    @edad_min = 20,
-    @edad_max = 65,
-    @costo = 3500;
+-- ✅ MODIFICAR RESERVA SUM - CORRECTO (usar ID existente, cambiar fecha)
+EXEC actividad.modificar_reserva_sum 
+    @id_reserva = 1,
+    @id_socio = 28,
+    @id_actividad_extra = 2,
+    @fecha_reserva = '2025-06-15';
 
--- ❌ MODIFICAR CATEGORÍA SOCIO - ERROR (nombre no existe)
-EXEC socio.modificar_categoria_socio 
-    @nombre = 'inexistente',
-    @edad_min = 20,
-    @edad_max = 65,
-    @costo = 3500;
+-- ❌ MODIFICAR RESERVA SUM - ERROR (fecha ya reservada por otra reserva)
+EXEC actividad.modificar_reserva_sum 
+    @id_reserva = 1,
+    @id_socio = 1,
+    @id_actividad_extra = 2,
+    @fecha_reserva = '2025-06-10';
 
--- ✅ ELIMINAR CATEGORÍA SOCIO - CORRECTO (usar nombre existente, ej: 'mayor')
-EXEC socio.eliminar_categoria_socio @nombre = 'mayor';
+-- ✅ ELIMINAR RESERVA SUM - CORRECTO (usar ID existente)
+EXEC actividad.eliminar_reserva_sum @id_reserva = 1;
 
--- ❌ ELIMINAR CATEGORÍA SOCIO - ERROR (nombre inexistente)
-EXEC socio.eliminar_categoria_socio @nombre = 'noexiste';
-
-
+-- ❌ ELIMINAR RESERVA SUM - ERROR (ID inexistente)
+EXEC actividad.eliminar_reserva_sum @id_reserva = 999;
 
 -- ==========================================
 -- Pruebas para actividad
@@ -526,44 +492,6 @@ EXEC actividad.borrar_inscripcion_actividad
     @id_actividad = 999;
 
 
-
--- ==========================================
--- Pruebas para reserva_sum
--- ==========================================
-
--- ✅ INSERTAR RESERVA SUM - CORRECTO (usar IDs existentes, ej: id_socio = 1, id_actividad_extra = 2)
-EXEC actividad.insertar_reserva_sum 
-    @id_socio = 28,
-    @id_actividad_extra = 2,
-    @fecha_reserva = '2025-06-10';
-
--- ❌ INSERTAR RESERVA SUM - ERROR (fecha ya reservada)
-EXEC actividad.insertar_reserva_sum 
-    @id_socio = 1,
-    @id_actividad_extra = 2,
-    @fecha_reserva = '2025-06-10';
-
--- ✅ MODIFICAR RESERVA SUM - CORRECTO (usar ID existente, cambiar fecha)
-EXEC actividad.modificar_reserva_sum 
-    @id_reserva = 1,
-    @id_socio = 28,
-    @id_actividad_extra = 2,
-    @fecha_reserva = '2025-06-15';
-
--- ❌ MODIFICAR RESERVA SUM - ERROR (fecha ya reservada por otra reserva)
-EXEC actividad.modificar_reserva_sum 
-    @id_reserva = 1,
-    @id_socio = 1,
-    @id_actividad_extra = 2,
-    @fecha_reserva = '2025-06-10';
-
--- ✅ ELIMINAR RESERVA SUM - CORRECTO (usar ID existente)
-EXEC actividad.eliminar_reserva_sum @id_reserva = 1;
-
--- ❌ ELIMINAR RESERVA SUM - ERROR (ID inexistente)
-EXEC actividad.eliminar_reserva_sum @id_reserva = 999;
-
-
 -- ==========================================
 -- Pruebas para participante_actividad_extra
 -- ==========================================
@@ -601,3 +529,55 @@ EXEC actividad.borrar_participante_actividad_extra @id_participante = 1;
 EXEC actividad.borrar_participante_actividad_extra @id_participante = 999;
 
 
+-- ==========================================
+-- Pruebas para detalle_factura
+-- ==========================================
+use Com5600G02
+go
+-- Caso correcto: Insertar Detalle Factura
+EXEC factura.insertar_detalle_factura 
+    @id_factura = 1,           
+    @id_membresia = 3,         
+    @id_participante = NULL,   
+    @id_reserva = NULL,        
+    @monto = 5000.00, 
+    @fecha = '2025-05-01';
+
+	
+-- Caso incorrecto: Insertar Detalle Factura (factura y demas datos no existen)
+EXEC factura.insertar_detalle_factura 
+    @id_factura = -99, 
+    @id_membresia = -99, 
+    @id_participante = -99, 
+    @id_reserva = -99, 
+    @monto = -100.00, 
+    @fecha = NULL;
+
+
+-- Caso correcto: Eliminar Detalle Factura
+-- Asegurarse que exista un detalle_factura con id 11 antes de ejecutar esto
+EXEC factura.eliminar_detalle_factura @id_detallefactura = 11;
+
+-- Caso incorrecto: Eliminar Detalle Factura
+EXEC factura.eliminar_detalle_factura @id_detallefactura = -1;
+
+-- ==========================================
+-- Pruebas para aplica_descuento
+-- ==========================================
+
+EXEC factura.insertar_aplica_descuento 
+    @id_descuento = 2, 
+    @id_detallefactura = 7;
+
+	--incorrecto id inexistente
+	EXEC factura.insertar_aplica_descuento 
+    @id_descuento = -1, 
+    @id_detallefactura = -1;
+	--correcto eliminar
+	EXEC factura.eliminar_aplica_descuento 
+    @id_descuento = 2, 
+    @id_detallefactura = 7;
+	--incorrecto
+	EXEC factura.eliminar_aplica_descuento 
+    @id_descuento = -1, 
+    @id_detallefactura = -1;

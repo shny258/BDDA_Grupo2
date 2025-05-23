@@ -3,6 +3,7 @@
 --número de grupo, nombre de la materia, nombres y DNI de los alumnos. Entregar todo en un zip 
 --(observar las pautas para nomenclatura antes expuestas) mediante la sección de prácticas de MIEL. 
 --Solo uno de los miembros del grupo debe hacer la entrega
+
 create database Com5600G02;
 go
 use Com5600G02;
@@ -155,14 +156,7 @@ CREATE TABLE factura.pago (
     id_factura INT REFERENCES factura.factura_mensual(id_factura),
     fecha_pago DATE NOT NULL,
 	id_medio_de_pago INT REFERENCES factura.medio_de_pago(id_medio_de_pago),
+	monto NUMERIC(15,2),
     tipo_pago VARCHAR(20) -- Ej: "Pago completo", "Reembolso", "Pago a cuenta"
+
 );
-
-USE Com5600G02;
-GO
-SELECT * 
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_SCHEMA = 'actividad'
-  AND TABLE_NAME = 'inscripcion_actividad';
-
-  DROP TABLE IF EXISTS actividad.inscripcion_actividad;

@@ -154,6 +154,11 @@ BEGIN
 			return
 		end
 	--termina validacion
+	IF @id <= 0 
+    BEGIN
+        RAISERROR('El id debe ser mayor que cero', 16, 1);
+        RETURN;
+    END
 	delete factura.medio_de_pago where id_medio_de_pago = @id
 END;
 go
