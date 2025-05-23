@@ -52,6 +52,82 @@ END;
 go
 
 -- ==========================================
+-- Insertar Descuento
+-- ==========================================
+Create procedure factura.insertar_descuento
+(@nombre nvarchar(50), @porcentaje numeric(5,2)) as
+BEGIN
+--validaciones
+	IF @nombre is NULL or ltrim(rtrim(@nombre)) = ''
+	begin
+		raiserror('nombre invalido',16,1);
+		return
+	end
+	IF @porcentaje is NULL or @porcentaje <= 0
+	begin
+		raiserror('porcentaje invalido',16,1);
+		return
+	end
+--
+--mas validaciones tal vez
+	insert into factura.descuento (nombre, porcentaje)
+	values (@nombre, @porcentaje)
+END;
+go
+
+-- ==========================================
+-- Modificar Descuento
+-- ==========================================
+Create procedure factura.modificar_descuento
+(@id_descuento int, @nombre nvarchar(50), @porcentaje numeric(5,2)) as
+BEGIN
+--validaciones
+	IF @id_descuento is NULL
+	begin
+		raiserror('id invalido.',16,1);
+		return
+	end
+	IF NOT EXISTS (SELECT 1 FROM factura.descuento WHERE id_descuento = @id_descuento) BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+	IF @porcentaje is NULL or @porcentaje <= 0
+	begin
+		raiserror('porcentaje invalido',16,1);
+		return
+	end
+	IF @nombre is NULL or ltrim(rtrim(@nombre)) = ''
+	begin
+		raiserror('nombre invalido',16,1);
+		return
+	end
+--termina validacion
+	update factura.descuento
+	set nombre = @nombre, porcentaje = @porcentaje
+	where id_descuento = @id_descuento
+END;
+go
+
+-- ==========================================
+-- Eliminar Descuento
+-- ==========================================
+Create procedure factura.eliminar_descuento (@id int) as
+BEGIN
+	IF @id is NULL
+		begin
+			raiserror('Id invalida',16,1);
+			return
+		end
+	IF NOT EXISTS (SELECT 1 FROM factura.descuento WHERE id_descuento = @id) BEGIN
+        RAISERROR ('id no existe', 16, 1);
+        RETURN;
+    END
+
+	delete factura.descuento where id_descuento = @id
+END;
+go
+
+-- ==========================================
 -- Insertar Factura Mensual
 -- ==========================================
 Create procedure factura.insertar_factura_mensual 
