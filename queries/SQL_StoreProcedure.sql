@@ -807,11 +807,11 @@ BEGIN
         RETURN;
     END
     IF @edad_max < @edad_min BEGIN
-        RAISERROR('La edad máxima no puede ser menor que la mínima.', 16, 1);
+        RAISERROR('La edad máxima no puede ser menor que la minima', 16, 1);
         RETURN;
     END
     IF @costo <= 0 BEGIN
-        RAISERROR('El costo debe ser mayor a cero.', 16, 1);
+        RAISERROR('El costo debe ser mayor a cero', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -832,7 +832,7 @@ AS
 BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM socio.categoria_socio WHERE nombre = @nombre) BEGIN
-        RAISERROR('La categoría no existe.', 16, 1);
+        RAISERROR('La categoria no existe', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -873,7 +873,7 @@ BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM actividad.actividad WHERE id_actividad = @id)
     BEGIN
-        RAISERROR('Actividad no encontrada.', 16, 1);
+        RAISERROR('Actividad no encontrada', 16, 1);
         RETURN;
     END
 	IF @costo_mensual is NULL or @costo_mensual < 0
@@ -897,7 +897,7 @@ BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM actividad.actividad WHERE id_actividad = @id)
     BEGIN
-        RAISERROR('Actividad no encontrada.', 16, 1);
+        RAISERROR('Actividad no encontrada', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -916,13 +916,13 @@ BEGIN
 	--validaciones
     IF @costo_adulto IS NULL OR @costo_adulto < 0
     BEGIN
-        RAISERROR('Costo de adulto inválido.', 16, 1);
+        RAISERROR('Costo de adulto invalido', 16, 1);
         RETURN;
     END
 
     IF @costo_menor IS NULL OR @costo_menor < 0
     BEGIN
-        RAISERROR('Costo de menor inválido.', 16, 1);
+        RAISERROR('Costo de menor invalido', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -943,19 +943,19 @@ BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM actividad.actividad_extra WHERE id_actividad_extra = @id)
     BEGIN
-        RAISERROR('Actividad extra no encontrada.', 16, 1);
+        RAISERROR('Actividad extra no encontrada', 16, 1);
         RETURN;
     END
 
     IF @costo_adulto IS NULL OR @costo_adulto < 0
     BEGIN
-        RAISERROR('Costo de adulto inválido.', 16, 1);
+        RAISERROR('Costo de adulto invalido', 16, 1);
         RETURN;
     END
 
     IF @costo_menor IS NULL OR @costo_menor < 0
     BEGIN
-        RAISERROR('Costo de menor inválido.', 16, 1);
+        RAISERROR('Costo de menor invalido', 16, 1);
         RETURN;
     END
 	--termina validacion
@@ -976,11 +976,211 @@ BEGIN
 	--validaciones
     IF NOT EXISTS (SELECT 1 FROM actividad.actividad_extra WHERE id_actividad_extra = @id)
     BEGIN
-        RAISERROR('Actividad extra no encontrada.', 16, 1);
+        RAISERROR('Actividad extra no encontrada', 16, 1);
         RETURN;
     END
 	--termina validacion
     DELETE FROM actividad.actividad_extra
     WHERE id_actividad_extra = @id;
+END;
+GO
+
+-- ==========================================
+-- INSERTAR INSCRIPCION ACTIVIDAD
+-- ==========================================
+CREATE PROCEDURE actividad.insertar_inscripcion_actividad
+    @id_socio INT,
+    @id_actividad INT
+AS
+BEGIN
+    -- Validar existencia del socio
+    IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio)
+    BEGIN
+        RAISERROR('Socio no encontrado', 16, 1);
+        RETURN;
+    END
+
+    -- Validar existencia de la actividad
+    IF NOT EXISTS (SELECT 1 FROM actividad.actividad WHERE id_actividad = @id_actividad)
+    BEGIN
+        RAISERROR('Actividad no encontrada', 16, 1);
+        RETURN;
+    END
+
+    IF EXISTS (
+        SELECT 1 FROM actividad.inscripcion_actividad
+        WHERE id_socio = @id_socio AND id_actividad = @id_actividad
+    )
+    BEGIN
+        RAISERROR('El socio ya esta inscripto en la actividad', 16, 1);
+        RETURN;
+    END
+
+    INSERT INTO actividad.inscripcion_actividad (id_socio, id_actividad)
+    VALUES (@id_socio, @id_actividad);
+END;
+GO
+
+-- ==========================================
+-- ELIMINAR INSCRIPCION ACTIVIDAD
+-- ==========================================
+CREATE PROCEDURE actividad.borrar_inscripcion_actividad
+    @id_socio INT,
+    @id_actividad INT
+AS
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM actividad.inscripcion_actividad
+        WHERE id_socio = @id_socio AND id_actividad = @id_actividad
+    )
+    BEGIN
+        RAISERROR('Inscripcion no encontrada', 16, 1);
+        RETURN;
+    END
+
+    DELETE FROM actividad.inscripcion_actividad
+    WHERE id_socio = @id_socio AND id_actividad = @id_actividad;
+END;
+GO
+
+
+-- ==========================================
+-- MODIFICAR INSCRIPCION ACTIVIDAD
+-- ==========================================
+CREATE PROCEDURE actividad.modificar_fecha_inscripcion_actividad
+    @id_socio INT,
+    @id_actividad INT,
+    @nueva_fecha DATE
+AS
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM actividad.inscripcion_actividad
+        WHERE id_socio = @id_socio AND id_actividad = @id_actividad
+    )
+    BEGIN
+        RAISERROR('Inscripcion no encontrada', 16, 1);
+        RETURN;
+    END
+
+    IF @nueva_fecha IS NULL
+    BEGIN
+        RAISERROR('Error con la fecha ingresada', 16, 1);
+        RETURN;
+    END
+
+    UPDATE actividad.inscripcion_actividad
+    SET fecha_inscripcion = @nueva_fecha
+    WHERE id_socio = @id_socio AND id_actividad = @id_actividad;
+END;
+GO
+
+
+-- ==========================================
+-- INSERTAR RESERVA DE SUM
+-- ==========================================
+CREATE PROCEDURE actividad.insertar_reserva_sum
+    @id_socio INT,
+    @id_actividad_extra INT,
+    @fecha_reserva DATE
+AS
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio)
+    BEGIN
+        RAISERROR('Socio no encontrado', 16, 1);
+        RETURN;
+    END
+
+    
+    IF NOT EXISTS (SELECT 1 FROM actividad.actividad_extra WHERE id_actividad_extra = @id_actividad_extra)
+    BEGIN
+        RAISERROR('Actividad extra no encontrada', 16, 1);
+        RETURN;
+    END
+
+
+    IF @fecha_reserva IS NULL
+    BEGIN
+        RAISERROR('Debe especificar una fecha de reserva', 16, 1);
+        RETURN;
+    END
+
+	 IF EXISTS (SELECT 1 FROM actividad.reserva_sum WHERE fecha_reserva = @fecha_reserva)
+    BEGIN
+        RAISERROR('Ya existe una reserva para ese dia', 16, 1);
+        RETURN;
+    END
+
+    INSERT INTO actividad.reserva_sum (id_socio, id_actividad_extra, fecha_reserva)
+    VALUES (@id_socio, @id_actividad_extra, @fecha_reserva);
+END;
+GO
+
+-- ==========================================
+-- MODFICAR RESERVA DE SUM
+-- ==========================================
+CREATE PROCEDURE actividad.modificar_reserva_sum
+    @id_reserva INT,
+    @id_socio INT,
+    @id_actividad_extra INT,
+    @fecha_reserva DATE
+AS
+BEGIN
+
+    IF NOT EXISTS (SELECT 1 FROM actividad.reserva_sum WHERE id_reserva = @id_reserva)
+    BEGIN
+        RAISERROR('Reserva no encontrada', 16, 1);
+        RETURN;
+    END
+
+    IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio)
+    BEGIN
+        RAISERROR('Socio no encontrado', 16, 1);
+        RETURN;
+    END
+
+    IF NOT EXISTS (SELECT 1 FROM actividad.actividad_extra WHERE id_actividad_extra = @id_actividad_extra)
+    BEGIN
+        RAISERROR('Actividad extra no encontrada', 16, 1);
+        RETURN;
+    END
+
+    IF @fecha_reserva IS NULL
+    BEGIN
+        RAISERROR('Debe especificar una fecha de reserva', 16, 1);
+        RETURN;
+    END
+
+    IF EXISTS (
+        SELECT 1 FROM actividad.reserva_sum 
+        WHERE fecha_reserva = @fecha_reserva AND id_reserva <> @id_reserva
+    )
+    BEGIN
+        RAISERROR('Ya existe una reserva para ese dia', 16, 1);
+        RETURN;
+    END
+
+    UPDATE actividad.reserva_sum
+    SET id_socio = @id_socio,
+        id_actividad_extra = @id_actividad_extra,
+        fecha_reserva = @fecha_reserva
+    WHERE id_reserva = @id_reserva;
+END;
+GO
+
+-- ==========================================
+-- ELIMINAR RESERVA DE SUM
+-- ==========================================
+
+CREATE PROCEDURE actividad.eliminar_reserva_sum
+    @id_reserva INT
+AS
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM actividad.reserva_sum WHERE id_reserva = @id_reserva)
+    BEGIN
+        RAISERROR('Reserva no encontrada', 16, 1);
+        RETURN;
+    END
+
+    DELETE FROM actividad.reserva_sum WHERE id_reserva = @id_reserva;
 END;
 GO
