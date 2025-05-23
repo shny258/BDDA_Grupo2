@@ -43,7 +43,7 @@ CREATE TABLE socio.grupo_familiar (
     nombre VARCHAR(50),
     apellido VARCHAR(50),
     dni VARCHAR(10) UNIQUE,
-    email VARCHAR(50),
+    email VARCHAR(50) UNIQUE,
     fecha_nacimiento DATE,
     telefono VARCHAR(20),
     parentesco VARCHAR(50)
@@ -52,10 +52,10 @@ CREATE TABLE socio.grupo_familiar (
 -- Tabla de socios
 CREATE TABLE socio.socio (
     id_socio int identity (1,1) PRIMARY KEY,
-	 dni VARCHAR(15) UNIQUE NOT NULL,
+	dni VARCHAR(15) UNIQUE NOT NULL,
     nombre VARCHAR(50) NOT NULL,
     apellido VARCHAR(50) NOT NULL,
-    email VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
     fecha_nacimiento DATE NOT NULL,
     telefono_contacto VARCHAR(20),
     telefono_emergencia VARCHAR(20),
@@ -79,14 +79,14 @@ CREATE TABLE socio.membresia (
 -- Actividades (natación, futsal, etc.)
 CREATE TABLE actividad.actividad (
     id_actividad int identity PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL,
+    nombre VARCHAR(50) UNIQUE NOT NULL,
     costo_mensual NUMERIC(15,2)
 );
 
 -- Actividades extra (colonia, pileta recreativa, etc.)
 CREATE TABLE actividad.actividad_extra (
     id_actividad_extra int identity PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL,
+    nombre VARCHAR(50) UNIQUE NOT NULL,
     costo_adulto NUMERIC(15,2),
 	costo_menor NUMERIC(15,2)
 );
@@ -137,7 +137,7 @@ CREATE TABLE factura.detalle_factura (
 -- Descuentos
 CREATE TABLE factura.descuento (
     id_descuento int identity PRIMARY KEY,
-    nombre nvarchar(50),
+    nombre nvarchar(50) UNIQUE,
     porcentaje NUMERIC(5,2) -- ej: 15.00 para 15%
 );
 
