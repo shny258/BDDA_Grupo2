@@ -153,8 +153,7 @@ CREATE TABLE factura.pago (
     id_pago int identity PRIMARY KEY,
     id_factura INT REFERENCES factura.factura_mensual(id_factura),
     fecha_pago DATE NOT NULL,
-    monto NUMERIC(15,2) NOT NULL,
-   id_medio_de_pago INT REFERENCES factura.medio_de_pago(id_medio_de_pago),
+	id_medio_de_pago INT REFERENCES factura.medio_de_pago(id_medio_de_pago),
     tipo_pago VARCHAR(20) -- Ej: "Pago completo", "Reembolso", "Pago a cuenta"
 );
 
