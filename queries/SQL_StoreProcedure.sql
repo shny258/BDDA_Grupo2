@@ -373,7 +373,9 @@ BEGIN
 END;
 go
 
-------------SOCIO----------------------
+-- ==========================================
+-- Insertar Socio
+-- ==========================================
 CREATE PROCEDURE socio.insertar_socio
     @dni VARCHAR(15),
     @nombre VARCHAR(50),
@@ -408,7 +410,9 @@ BEGIN
 END;
 GO
 
--- Modificar un socio existente
+-- ==========================================
+-- Modificar Socio
+-- ==========================================
 CREATE PROCEDURE socio.modificar_socio
     @id_socio INT,
     @email VARCHAR(100),
@@ -440,7 +444,9 @@ BEGIN
 END;
 GO
 
--- Eliminar un socio (borrado lógico no requerido explícitamente, así que se realiza físico)
+-- ==========================================
+-- Eliminar Socio
+-- ==========================================
 CREATE PROCEDURE socio.eliminar_socio
     @id_socio INT
 AS
@@ -455,108 +461,9 @@ BEGIN
 END;
 GO
 
--- Insertar membresía
-CREATE PROCEDURE socio.insertar_membresia
-    @id_socio INT,
-    @fecha_inicio DATE,
-    @fecha_renovada DATE,
-    @fecha_fin DATE,
-    @costo NUMERIC(15,2)
-AS
-BEGIN
-	--validaciones
-    SET NOCOUNT ON;
-
-    IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio)
-    BEGIN
-        RAISERROR('El socio no existe.', 16, 1);
-        RETURN;
-    END
-
-    IF @fecha_inicio IS NULL OR @fecha_renovada IS NULL OR @fecha_fin IS NULL
-        OR @fecha_inicio > @fecha_fin
-        OR @fecha_renovada < @fecha_inicio OR @fecha_renovada > @fecha_fin
-    BEGIN
-        RAISERROR('Fechas inválidas.', 16, 1);
-        RETURN;
-    END
-
-    IF @costo <= 0
-    BEGIN
-        RAISERROR('El costo debe ser mayor a cero.', 16, 1);
-        RETURN;
-    END
-	--termina validacion
-    INSERT INTO socio.membresia (id_socio, fecha_inicio, fecha_renovada, fecha_fin, costo)
-    VALUES (@id_socio, @fecha_inicio, @fecha_renovada, @fecha_fin, @costo);
-END;
-go
- --modificar
- CREATE PROCEDURE socio.modificar_membresia
-    @id_membresia INT,
-    @fecha_renovada DATE,
-    @fecha_fin DATE,
-    @costo NUMERIC(15,2)
-AS
-BEGIN
-	--validaciones
-    SET NOCOUNT ON;
-
-    IF NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia)
-    BEGIN
-        RAISERROR('No existe la membresía.', 16, 1);
-        RETURN;
-    END
-
-    DECLARE @fecha_inicio DATE;
-    SELECT @fecha_inicio = fecha_inicio FROM socio.membresia WHERE id_membresia = @id_membresia;
-
-    IF @fecha_renovada IS NULL OR @fecha_fin IS NULL
-        OR @fecha_renovada < @fecha_inicio OR @fecha_renovada > @fecha_fin
-    BEGIN
-        RAISERROR('Fechas inválidas.', 16, 1);
-        RETURN;
-    END
-
-    IF @costo <= 0
-    BEGIN
-        RAISERROR('El costo debe ser mayor a cero.', 16, 1);
-        RETURN;
-    END
-	--termina validacion
-    UPDATE socio.membresia
-    SET fecha_renovada = @fecha_renovada,
-        fecha_fin = @fecha_fin,
-        costo = @costo
-    WHERE id_membresia = @id_membresia;
-END;
-go
-
--------eliminar
-CREATE PROCEDURE socio.borrar_membresia
-    @id_membresia INT
-AS
-BEGIN
-	--validaciones
-    SET NOCOUNT ON;
-
-    IF NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia)
-    BEGIN
-        RAISERROR('No existe la membresía.', 16, 1);
-        RETURN;
-    END
-
-    IF EXISTS (SELECT 1 FROM factura.detalle_factura WHERE id_membresia = @id_membresia)
-    BEGIN
-        RAISERROR('No se puede eliminar la membresía: tiene facturas asociadas.', 16, 1);
-        RETURN;
-    END
-	--termina validacion
-    DELETE FROM socio.membresia
-    WHERE id_membresia = @id_membresia;
-END;
-go
-
+-- ==========================================
+-- Insertar Cuenta
+-- ==========================================
 CREATE PROCEDURE socio.insertar_cuenta
     @usuario VARCHAR(50),
     @contrasenia VARCHAR(50),
@@ -587,6 +494,9 @@ BEGIN
 END;
 GO
 
+-- ==========================================
+-- Modificar Cuenta
+-- ==========================================
 CREATE PROCEDURE socio.modificar_cuenta
     @id_usuario INT,
     @contrasenia VARCHAR(255),
@@ -620,6 +530,9 @@ BEGIN
 END;
 GO
 
+-- ==========================================
+-- Eliminar Cuenta
+-- ==========================================
 CREATE PROCEDURE socio.eliminar_cuenta
     @id_usuario INT
 AS
@@ -634,6 +547,9 @@ BEGIN
 END;
 GO
 
+-- ==========================================
+-- Insertar Grupo Familiar
+-- ==========================================
 CREATE PROCEDURE socio.insertar_grupo_familiar
     @nombre VARCHAR(50),
     @apellido VARCHAR(50),
@@ -1214,7 +1130,6 @@ GO
 -- ==========================================
 -- ELIMINAR RESERVA DE SUM
 -- ==========================================
-
 CREATE PROCEDURE actividad.eliminar_reserva_sum
     @id_reserva INT
 AS
@@ -1228,7 +1143,6 @@ BEGIN
     DELETE FROM actividad.reserva_sum WHERE id_reserva = @id_reserva;
 END;
 GO
-
 
 -- ==========================================
 --  INSERTAR PARTICIPANTE
@@ -1309,7 +1223,6 @@ GO
 -- ==========================================
 --  ELIMINAR PARTICIPANTE
 -- ==========================================
-
 CREATE PROCEDURE actividad.borrar_participante_actividad_extra
     @id_participante INT
 AS
