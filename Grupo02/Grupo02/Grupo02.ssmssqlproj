@@ -22,23 +22,23 @@
     </LogicalFolder>
     <LogicalFolder Name="Queries" Type="0" Sorted="true">
       <Items>
-        <FileNode Name="SQL_Creacion.sql">
+        <FileNode Name="00_CreacionBaseTablas.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-GR0AA0R:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>DESKTOP-GR0AA0R</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>SQL_Creacion.sql</FullPath>
+          <FullPath>00_CreacionBaseTablas.sql</FullPath>
         </FileNode>
-        <FileNode Name="SQL_Prueba.sql">
+        <FileNode Name="01_CreacionStoredProcedure.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-GR0AA0R:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>DESKTOP-GR0AA0R</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>SQL_Prueba.sql</FullPath>
+          <FullPath>01_CreacionStoredProcedure.sql</FullPath>
         </FileNode>
-        <FileNode Name="SQL_StoreProcedure.sql">
+        <FileNode Name="02_TestingInsertModifyDeleteSP.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-GR0AA0R:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>DESKTOP-GR0AA0R</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>SQL_StoreProcedure.sql</FullPath>
+          <FullPath>02_TestingInsertModifyDeleteSP.sql</FullPath>
         </FileNode>
       </Items>
     </LogicalFolder>

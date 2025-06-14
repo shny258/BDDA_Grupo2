@@ -937,9 +937,9 @@ BEGIN
 END;
 GO
 -- ==========================================
---  BORRAR ACTIVIDAD
+--  ELIMINAR ACTIVIDAD
 -- ==========================================
-CREATE PROCEDURE actividad.borrar_actividad
+CREATE PROCEDURE actividad.eliminar_actividad
     @id INT
 AS
 BEGIN
@@ -1016,9 +1016,9 @@ BEGIN
 END;
 GO
 -- ==========================================
--- BORRAR ACTIVIDAD EXTRA
+-- ELIMINAR ACTIVIDAD EXTRA
 -- ==========================================
-CREATE PROCEDURE actividad.borrar_actividad_extra
+CREATE PROCEDURE actividad.eliminar_actividad_extra
     @id INT
 AS
 BEGIN
@@ -1087,7 +1087,7 @@ GO
 -- ==========================================
 -- ELIMINAR INSCRIPCION ACTIVIDAD
 -- ==========================================
-CREATE PROCEDURE actividad.borrar_inscripcion_actividad
+CREATE PROCEDURE actividad.eliminar_inscripcion_actividad
     @id_socio INT,
     @id_actividad INT
 AS
@@ -1340,7 +1340,7 @@ GO
 -- ==========================================
 --  ELIMINAR PARTICIPANTE
 -- ==========================================
-CREATE PROCEDURE actividad.borrar_participante_actividad_extra
+CREATE PROCEDURE actividad.eliminar_participante_actividad_extra
     @id_participante INT
 AS
 BEGIN

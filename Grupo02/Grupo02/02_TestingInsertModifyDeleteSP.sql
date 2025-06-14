@@ -186,11 +186,11 @@ EXEC actividad.modificar_actividad
     @nombre = 'Aeróbicos',
     @costo_mensual = 2000;
 
---  BORRAR ACTIVIDAD - CORRECTO (usar ID existente, por ejemplo: 1)
-EXEC actividad.borrar_actividad @id = 1;
+--  eliminar ACTIVIDAD - CORRECTO (usar ID existente, por ejemplo: 1)
+EXEC actividad.eliminar_actividad @id = 1;
 
---  BORRAR ACTIVIDAD - ERROR (ID inexistente)
-EXEC actividad.borrar_actividad @id = 999;
+--  eliminar ACTIVIDAD - ERROR (ID inexistente)
+EXEC actividad.eliminar_actividad @id = 999;
 
 -- ==========================================
 -- Pruebas para factura_mensual
@@ -421,11 +421,11 @@ EXEC actividad.modificar_actividad
     @nombre = 'Aeróbicos',
     @costo_mensual = 2000;
 
--- BORRAR ACTIVIDAD - CORRECTO (usar ID existente, por ejemplo: 1)
-EXEC actividad.borrar_actividad @id = 1;
+-- Eliminar ACTIVIDAD - CORRECTO (usar ID existente, por ejemplo: 1)
+EXEC actividad.eliminar_actividad @id = 1;
 
---  BORRAR ACTIVIDAD - ERROR (ID inexistente)
-EXEC actividad.borrar_actividad @id = 999;
+--  Eliminar ACTIVIDAD - ERROR (ID inexistente)
+EXEC actividad.eliminar_actividad @id = 999;
 
 
 -- ==========================================
@@ -458,11 +458,11 @@ EXEC actividad.modificar_actividad_extra
     @costo_adulto = 1000,
     @costo_menor = 500;
 
---  BORRAR ACTIVIDAD EXTRA - CORRECTO (usar ID existente, por ejemplo: 1)
-EXEC actividad.borrar_actividad_extra @id = 1;
+--  Eliminar ACTIVIDAD EXTRA - CORRECTO (usar ID existente, por ejemplo: 1)
+EXEC actividad.eliminar_actividad_extra @id = 1;
 
---  BORRAR ACTIVIDAD EXTRA - ERROR (ID inexistente)
-EXEC actividad.borrar_actividad_extra @id = 999;
+--  Eliminar ACTIVIDAD EXTRA - ERROR (ID inexistente)
+EXEC actividad.eliminar_actividad_extra @id = 999;
 
 
 -- ==========================================
@@ -494,13 +494,13 @@ EXEC actividad.modificar_inscripcion_actividad
     @id_actividad = 2,
     @fecha_inscripcion = '2025-06-01';
 
---  BORRAR INSCRIPCION ACTIVIDAD - CORRECTO (usar IDs existentes)
-EXEC actividad.borrar_inscripcion_actividad 
+--  Eliminar INSCRIPCION ACTIVIDAD - CORRECTO (usar IDs existentes)
+EXEC actividad.eliminar_inscripcion_actividad 
     @id_socio = 28,
     @id_actividad = 2;
 
---  BORRAR INSCRIPCION ACTIVIDAD - ERROR (inscripcion inexistente)
-EXEC actividad.borrar_inscripcion_actividad 
+--  Eliminar INSCRIPCION ACTIVIDAD - ERROR (inscripcion inexistente)
+EXEC actividad.eliminar_inscripcion_actividad 
     @id_socio = 1,
     @id_actividad = 999;
 
@@ -536,10 +536,10 @@ EXEC actividad.modificar_participante_actividad_extra
     @tipo_participante = 'S';
 
 --  ELIMINAR PARTICIPANTE ACTIVIDAD EXTRA - CORRECTO (usar ID existente)
-EXEC actividad.borrar_participante_actividad_extra @id_participante = 1;
+EXEC actividad.eliminar_participante_actividad_extra @id_participante = 1;
 
 --  ELIMINAR PARTICIPANTE ACTIVIDAD EXTRA - ERROR (ID inexistente)
-EXEC actividad.borrar_participante_actividad_extra @id_participante = 999;
+EXEC actividad.eliminar_participante_actividad_extra @id_participante = 999;
 
 
 -- ==========================================
