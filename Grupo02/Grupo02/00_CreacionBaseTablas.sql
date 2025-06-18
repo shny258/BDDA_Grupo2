@@ -66,17 +66,18 @@ CREATE TABLE socio.socio (
 	dni VARCHAR(15)  unique NOT NULL,
     nombre VARCHAR(50) NOT NULL,
     apellido VARCHAR(50) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE  NULL,
     fecha_nacimiento DATE NOT NULL,
     telefono_contacto VARCHAR(20),
     telefono_emergencia VARCHAR(20),
     cobertura_medica VARCHAR(100),
     nro_cobertura_medica VARCHAR(50),
+	nro_socio_rp VARCHAR(10) NULL,
     id_medio_de_pago INT REFERENCES factura.medio_de_pago(id_medio_de_pago),
     id_grupo_familiar INT REFERENCES socio.grupo_familiar(id_grupo_familiar),
     id_categoria varchar(50) REFERENCES socio.categoria_socio(nombre)
 );
-
+select * from socio.socio
 -- Membresía por socio
 CREATE TABLE socio.membresia (
     id_membresia int identity PRIMARY KEY,
