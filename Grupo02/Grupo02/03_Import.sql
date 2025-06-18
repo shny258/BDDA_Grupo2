@@ -32,6 +32,8 @@ FROM OPENROWSET('Microsoft.ACE.OLEDB.12.0',
     'Excel 12.0;Database=C:\Importar\Datos socios.xlsx;HDR=YES;IMEX=1',
     'SELECT * FROM [pago cuotas$]');
 
+DROP PROCEDURE importar_socios_excel
+
 CREATE OR ALTER PROCEDURE importar_socios_excel
     @ruta NVARCHAR(255)
 AS
@@ -56,8 +58,8 @@ BEGIN
         [ teléfono de contacto],
         COALESCE([ teléfono de contacto emergencia], [teléfono de contacto de emergencia]),
         [ Nombre de la obra social o prepaga],
-        [nro de socio obra social/prepaga],
-        NULL, NULL, NULL,[Nro de Socio]
+        [nro# de socio obra social/prepaga ],
+        NULL, NULL, NULL,[Nro de Socio] 
     FROM OPENROWSET(
         ''Microsoft.ACE.OLEDB.12.0'',
         ''Excel 12.0 Xml;Database=' + @ruta + ';HDR=YES;IMEX=1'',
@@ -72,7 +74,7 @@ BEGIN
         )
     ';
 
-    EXEC sp_executesql @sql;
+    EXEC sp_executesql @sql;
 END;
 GO
 
@@ -86,6 +88,6 @@ SELECT *
 FROM OPENROWSET(
     'Microsoft.ACE.OLEDB.12.0',
     'Excel 12.0;Database=C:\Importar\Datos Socios.xlsx;HDR=YES',
-    'SELECT * FROM [Grupo Familiar$]'
+    'SELECT * FROM [Responsables de Pago$]'
 );
 
