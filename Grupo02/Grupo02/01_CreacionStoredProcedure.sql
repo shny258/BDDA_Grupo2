@@ -465,7 +465,8 @@ go
 -- ==========================================
 -- Insertar Socio
 -- ==========================================
-CREATE PROCEDURE socio.insertar_socio
+CREATE OR ALTER PROCEDURE socio.insertar_socio
+    @nro_socio VARCHAR(10),
     @dni VARCHAR(15),
     @nombre VARCHAR(50),
     @apellido VARCHAR(50),
@@ -480,24 +481,47 @@ CREATE PROCEDURE socio.insertar_socio
     @id_categoria VARCHAR(50)
 AS
 BEGIN
-	--validaciones
-    IF @dni IS NULL OR LEN(@dni) = 0 BEGIN
-        RAISERROR ('El DNI no puede estar vacio', 16, 1);
+    SET NOCOUNT ON;
+
+    -- Validaciones
+    IF @nro_socio IS NULL OR LEN(@nro_socio) = 0
+    BEGIN
+        RAISERROR ('El número de socio no puede estar vacío', 16, 1);
         RETURN;
     END
-    IF @nombre IS NULL OR LEN(@nombre) = 0 BEGIN
-        RAISERROR ('El nombre no puede estar vacio', 16, 1);
+
+    IF @dni IS NULL OR LEN(@dni) = 0
+    BEGIN
+        RAISERROR ('El DNI no puede estar vacío', 16, 1);
         RETURN;
     END
-    IF @apellido IS NULL OR LEN(@apellido) = 0 BEGIN
-        RAISERROR ('El apellido no puede estar vacio', 16, 1);
+
+    IF @nombre IS NULL OR LEN(@nombre) = 0
+    BEGIN
+        RAISERROR ('El nombre no puede estar vacío', 16, 1);
         RETURN;
     END
-	--termina validacion
-    INSERT INTO socio.socio (dni, nombre, apellido, email, fecha_nacimiento, telefono_contacto, telefono_emergencia, cobertura_medica, nro_cobertura_medica, id_medio_de_pago, id_grupo_familiar, id_categoria)
-    VALUES (@dni, @nombre, @apellido, @email, @fecha_nacimiento, @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica, @id_medio_de_pago, @id_grupo_familiar, @id_categoria);
+
+    IF @apellido IS NULL OR LEN(@apellido) = 0
+    BEGIN
+        RAISERROR ('El apellido no puede estar vacío', 16, 1);
+        RETURN;
+    END
+
+    -- Inserción
+    INSERT INTO socio.socio (
+        nro_socio, dni, nombre, apellido, email, fecha_nacimiento, 
+        telefono_contacto, telefono_emergencia, cobertura_medica, 
+        nro_cobertura_medica, id_medio_de_pago, id_grupo_familiar, id_categoria
+    )
+    VALUES (
+        @nro_socio, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
+        @telefono_contacto, @telefono_emergencia, @cobertura_medica, 
+        @nro_cobertura_medica, @id_medio_de_pago, @id_grupo_familiar, @id_categoria
+    );
 END;
 GO
+
 
 -- ==========================================
 -- Modificar Socio
