@@ -176,4 +176,3 @@ GO
 EXEC importar_socios_excel @ruta = 'C:\Importar\Datos socios.xlsx';
 
 select* from socio.socio_temp
-

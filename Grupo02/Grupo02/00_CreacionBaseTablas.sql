@@ -59,9 +59,12 @@ CREATE TABLE socio.grupo_familiar (
 );
 
 -- Tabla de socios
+alter table socio.socio add nro_socio varchar(50)
+select* from socio.socio
 CREATE TABLE socio.socio (
     id_socio int identity (1,1) PRIMARY KEY,
 	dni VARCHAR(15)  unique NOT NULL,
+	nro_socio varchar(50),
     nombre VARCHAR(50) NOT NULL,
     apellido VARCHAR(50) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
