@@ -35,19 +35,35 @@ FROM OPENROWSET('Microsoft.ACE.OLEDB.12.0',
 DROP PROCEDURE importar_socios_excel
 
 CREATE OR ALTER PROCEDURE importar_socios_excel
+
     @ruta NVARCHAR(255)
 AS
 BEGIN
+
+		CREATE TABLE #socio_temp (
+	    id_socio int identity (1,1) PRIMARY KEY,
+		nro_socio VARCHAR (10)  NOT NULL,
+		dni VARCHAR(15)  NOT NULL,
+		nombre VARCHAR(50) NOT NULL,
+		apellido VARCHAR(50) NOT NULL,
+		email VARCHAR(100)  NOT NULL,
+		fecha_nacimiento DATE NOT NULL,
+		telefono_contacto VARCHAR(20),
+		telefono_emergencia VARCHAR(20),
+		cobertura_medica VARCHAR(100),
+		nro_cobertura_medica VARCHAR(50),
+	);
+
     SET NOCOUNT ON;
 
     DECLARE @sql NVARCHAR(MAX);
 
     SET @sql = N'
-    INSERT INTO socio.socio (
+    INSERT INTO #socio_temp(
         dni, nombre, apellido, email, fecha_nacimiento,
         telefono_contacto, telefono_emergencia,
         cobertura_medica, nro_cobertura_medica,
-        id_medio_de_pago, id_grupo_familiar, id_categoria,nro_socio
+       ,nro_socio
     )
     SELECT 
         LTRIM(RTRIM([ DNI])),
@@ -59,7 +75,7 @@ BEGIN
         COALESCE([ teléfono de contacto emergencia], [teléfono de contacto de emergencia]),
         [ Nombre de la obra social o prepaga],
         [nro# de socio obra social/prepaga ],
-        NULL, NULL, NULL,[Nro de Socio] 
+        [Nro de Socio] 
     FROM OPENROWSET(
         ''Microsoft.ACE.OLEDB.12.0'',
         ''Excel 12.0 Xml;Database=' + @ruta + ';HDR=YES;IMEX=1'',
@@ -90,4 +106,74 @@ FROM OPENROWSET(
     'Excel 12.0;Database=C:\Importar\Datos Socios.xlsx;HDR=YES',
     'SELECT * FROM [Responsables de Pago$]'
 );
+
+
+DROP DATABASE Com5600G02
+
+
+CREATE OR ALTER PROCEDURE importar_socios_excel
+    @ruta NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Borrar tabla si ya existe
+    IF OBJECT_ID('socio.socio_temp', 'U') IS NOT NULL
+        DROP TABLE socio.socio_temp;
+
+    -- Crear tabla temporal persistente
+    CREATE TABLE socio.socio_temp (
+        id_socio INT IDENTITY (1,1) PRIMARY KEY,
+        nro_socio VARCHAR(10) NOT NULL,
+        dni VARCHAR(15) NOT NULL,
+        nombre VARCHAR(50) NOT NULL,
+        apellido VARCHAR(50) NOT NULL,
+        email VARCHAR(100) NOT NULL,
+        fecha_nacimiento DATE NOT NULL,
+        telefono_contacto VARCHAR(20),
+        telefono_emergencia VARCHAR(20),
+        cobertura_medica VARCHAR(100),
+        nro_cobertura_medica VARCHAR(50)
+    );
+
+    DECLARE @sql NVARCHAR(MAX);
+
+    SET @sql = N'
+    INSERT INTO socio.socio_temp (
+        dni, nombre, apellido, email, fecha_nacimiento,
+        telefono_contacto, telefono_emergencia,
+        cobertura_medica, nro_cobertura_medica, nro_socio
+    )
+    SELECT 
+        LTRIM(RTRIM([ DNI])),
+        [Nombre],
+        [ apellido],
+        [ email personal],
+        TRY_CAST([ fecha de nacimiento] AS DATE),
+        CAST([ teléfono de contacto]AS VARCHAR(20)),
+        CAST([ teléfono de contacto emergencia] AS VARCHAR(20)),
+        [ Nombre de la obra social o prepaga],
+        [nro# de socio obra social/prepaga ],
+        [Nro de Socio]
+    FROM OPENROWSET(
+        ''Microsoft.ACE.OLEDB.12.0'',
+        ''Excel 12.0;Database=' + @ruta + ';HDR=YES;'',
+        ''SELECT * FROM [Responsables de Pago$]''
+    ) AS t
+    WHERE 
+        LTRIM(RTRIM([ DNI])) IS NOT NULL
+        AND LTRIM(RTRIM([ DNI])) <> ''''
+        AND TRY_CAST([ fecha de nacimiento] AS DATE) IS NOT NULL
+        AND NOT EXISTS (
+            SELECT 1 FROM socio.socio s WHERE LTRIM(RTRIM(s.dni)) = LTRIM(RTRIM(t.[ DNI]))
+        )
+    ';
+
+    EXEC sp_executesql @sql;
+END;
+GO
+
+EXEC importar_socios_excel @ruta = 'C:\Importar\Datos socios.xlsx';
+
+select* from socio.socio_temp
 
