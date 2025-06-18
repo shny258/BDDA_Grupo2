@@ -1,29 +1,59 @@
-CREATE PROCEDURE carga_open_meto_buenosAires @path NVARCHAR(255) as
+CREATE OR ALTER PROCEDURE factura.importar_clima_csv @path NVARCHAR(255) as
 begin
--- CREAR UNA TABLA TEMPORAL
-	CREATE TABLE #open_meteo (
-		horario date primary key,
-		temperatura numeric(3,1),
-		lluvia numeric(3,2),
-		humedad TINYINT,
-		viento numeric(3,1)
+	SET NOCOUNT ON;
+
+    IF OBJECT_ID('factura.clima_anual', 'U') IS NOT NULL
+        DROP TABLE factura.open_meteo;
+	CREATE TABLE factura.clima_anual (
+    FechaHora     varchar(50) primary key,      -- '2025-01-01T00:00'
+    Temperatura   numeric(3,1),          -- 24.7
+    Precipitacion numeric(4,2),          -- 0.00
+    Humedad       int,            -- 70
+    Viento        numeric(3,1)           -- 10.2
 	);
 
--- cargo el csv a la tabla temporal 
-	BULK INSERT #open_meteo
-	FROM 'C:\Users\lucia\Desktop\archivos\open-meteo-buenosaires_2025.csv' --concateno la ruta entre comillas
-	WITH (
-	FIELDTERMINATOR = ',',
-	ROWTERMINATOR = '\n',
-	FIRSTROW = 5, -- EL CSV TRAE ENCABEZADO
-	codepage = 'ACP',
-	TABLOCK
+-- CREAR UNA TABLA TEMPORAL
+	CREATE TABLE #temporal (
+    FechaHora     varchar(50),      -- '2025-01-01T00:00'
+    Temperatura   varchar(50),          -- 24.7
+    Precipitacion varchar(50),          -- 0.00
+    Humedad       varchar(50),            -- 70
+    Viento        varchar(50)           -- 10.2
 	);
-	select * from #open_meteo
+
+
+-- cargo el csv a la tabla temporal 
+	DECLARE @sqlQuery NVARCHAR(MAX)
+	SET @sqlQuery = '
+	BULK INSERT #temporal
+	FROM ''' + @path + ''' --concateno la ruta entre comillas
+	WITH (
+	FIELDTERMINATOR = '','',
+	ROWTERMINATOR = ''0x0A'',
+	FIRSTROW = 5, -- EL CSV TRAE ENCABEZADO
+	CODEPAGE = ''65001''
+	)';
+	DECLARE @sqlQuery2 NVARCHAR(MAX);
+	set @sqlQuery2 = '
+	INSERT INTO factura.clima_anual (
+        FechaHora, Temperatura, Precipitacion, Humedad, Viento
+    )
+	SELECT
+		FechaHora,
+		CAST(LTRIM(RTRIM(Temperatura)) AS numeric(3,1)) AS Temperatura,
+		CAST(LTRIM(RTRIM(Precipitacion)) AS numeric(4,2)) AS Precipitacion,
+		CAST(LTRIM(RTRIM(Humedad)) AS int) AS Humedad,
+		CAST(LTRIM(RTRIM(Viento)) AS numeric(3,1)) AS Viento
+	FROM #temporal';
+
+	EXEC sp_executesql @sqlQuery; -- ejecuto el procedimiento para que ejecute la query
+	EXEC sp_executesql @sqlQuery2;
 end
 go
 
-exec carga_open_meto_buenosAires @path = 'C:\Users\lucia\Desktop\archivos\open-meteo-buenosaires_2025.csv'
+exec factura.importar_clima_csv @path = 'C:\Users\lucia\Desktop\archivos\open-meteo-buenosaires_2025.csv'
+
+select * from factura.clima_anual;
 
 drop procedure carga_open_meto_buenosAires
 
