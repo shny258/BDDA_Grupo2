@@ -188,7 +188,7 @@ GO
 
 select * from factura.medio_de_pago
 
-EXECUTE socio.procesar_socios_temp;
+EXECUTE socio.procesar_socios_temp2;
 
  select * from socio.socio
 
@@ -433,6 +433,9 @@ EXECUTE socio.procesar_socios_temp2;
 
 select * from socio.socio
 
+
+
+
 =================================================================
 --IMPORTAR PAGOS
 =================================================================
@@ -558,3 +561,5 @@ EXEC factura.importar_excel_a_temporal @ruta = 'C:\Importar\Datos socios.xlsx';
 
 EXEC factura.procesar_pagos_temporales;
 
+
+select * from factura.pago
