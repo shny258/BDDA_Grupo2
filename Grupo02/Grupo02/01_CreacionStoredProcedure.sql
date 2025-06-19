@@ -331,13 +331,21 @@ CREATE OR ALTER PROCEDURE factura.insertar_pago
     @id_medio_de_pago INT,
     @tipo_pago VARCHAR(20),
     @fecha_pago DATE,
-    @monto NUMERIC(15,2)
+    @monto NUMERIC(15,2),
+    @nro_socio VARCHAR(10) -- nuevo parámetro para el socio
 )
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Validaciones
+    -- Validaciones como antes...
+
+    IF @id_factura IS NULL
+    BEGIN
+        RAISERROR('id_factura es NULL: no se encontró factura válida', 16, 1);
+        RETURN;
+    END
+
     IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura)
     BEGIN
         RAISERROR('id_factura no existe', 16, 1);
@@ -368,9 +376,24 @@ BEGIN
         RETURN;
     END
 
-    -- Insertar
-    INSERT INTO factura.pago (id_factura, id_medio_de_pago, tipo_pago, fecha_pago, monto)
-    VALUES (@id_factura, @id_medio_de_pago, @tipo_pago, @fecha_pago, @monto);
+    -- Validar duplicado
+    IF EXISTS (
+        SELECT 1
+        FROM factura.pago
+        WHERE id_factura = @id_factura
+          AND id_medio_de_pago = @id_medio_de_pago
+          AND tipo_pago = @tipo_pago
+          AND fecha_pago = @fecha_pago
+          AND monto = @monto
+    )
+    BEGIN
+        RAISERROR('Pago duplicado detectado, no se inserta.', 16, 1);
+        RETURN;
+    END
+
+    -- Finalmente insertamos incluyendo nro_socio
+    INSERT INTO factura.pago (id_factura, id_medio_de_pago, tipo_pago, fecha_pago, monto, nro_socio)
+    VALUES (@id_factura, @id_medio_de_pago, @tipo_pago, @fecha_pago, @monto, @nro_socio);
 END;
 GO
 
