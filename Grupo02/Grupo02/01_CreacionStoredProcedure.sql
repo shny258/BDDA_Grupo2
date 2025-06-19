@@ -533,7 +533,7 @@ BEGIN
         @nro_cobertura_medica, @id_medio_de_pago, @id_grupo_familiar, @categoria, @nro_socio_rp
     );
 END;
-
+go
 -- ==========================================
 -- Modificar Socio
 -- ==========================================

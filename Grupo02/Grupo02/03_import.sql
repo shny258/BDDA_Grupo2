@@ -3,7 +3,7 @@ begin
 	SET NOCOUNT ON;
  
     IF OBJECT_ID('factura.clima_anual', 'U') IS NOT NULL
-        DROP TABLE factura.open_meteo;
+        DROP TABLE factura.clima_anual;
 	CREATE TABLE factura.clima_anual (
     FechaHora     varchar(50) primary key,      -- '2025-01-01T00:00'
     Temperatura   numeric(3,1),          -- 24.7
@@ -51,28 +51,14 @@ begin
 end
 go
  
-exec factura.importar_clima_csv @path = 'C:\Users\lucia\Desktop\archivos\open-meteo-buenosaires_2025.csv'
+-- exec factura.importar_clima_csv @path = 'C:\Users\lucia\Desktop\archivos\open-meteo-buenosaires_2025.csv'
  
-select * from factura.clima_anual;
- 
-drop procedure carga_open_meto_buenosAires
+-- select * from factura.clima_anual;
 
-SELECT *
-FROM OPENROWSET('Microsoft.ACE.OLEDB.12.0',
-    'Excel 12.0;Database=C:\Importar\Datos socios.xlsx;HDR=YES;IMEX=1',
-    'SELECT * FROM [pago cuotas$]');
 
 
 ---------------------------------------------------------------------------------------
-SELECT *
-FROM OPENROWSET(
-    'Microsoft.ACE.OLEDB.12.0',
-    'Excel 12.0;Database=C:\Importar\Datos Socios.xlsx;HDR=YES',
-    'SELECT * FROM [Responsables de Pago$]'
-);
 
-
-DROP DATABASE Com5600G02
 EXEC sp_configure 'show advanced options', 1;
 RECONFIGURE;
 EXEC sp_configure 'Ad Hoc Distributed Queries', 1;
@@ -143,8 +129,8 @@ GO
 	EXEC socio.importar_socios_excel 
     @ruta = 'C:\Importar\Datos socios.xlsx';
 
-	select* from socio.socio_temp
-	DROP TABLE  socio.socio_temp
+--	select* from socio.socio_temp
+
 	CREATE OR ALTER PROCEDURE socio.procesar_socios_temp
 AS
 BEGIN
@@ -202,7 +188,7 @@ GO
 
 EXECUTE socio.procesar_socios_temp;
 
-select* from socio.socio
+--select* from socio.socio
 =====================================================
 --DATOS SOCIOS RESPONSABLES EXP GRUPO FAMILIAR
 =====================================================
@@ -273,206 +259,7 @@ GO
     @ruta = 'C:\Importar\Datos socios.xlsx';
 
 	select* from socio.socio_temp2
-/*CREATE OR ALTER PROCEDURE socio.procesar_socios_temp2
-AS
-BEGIN
-    SET NOCOUNT ON;
 
-    DECLARE 
-        @nro_socio VARCHAR(10),
-        @nro_socio_rp VARCHAR(10),
-        @dni VARCHAR(15),
-        @nombre VARCHAR(50),
-        @apellido VARCHAR(50),
-        @email VARCHAR(100),
-        @fecha_nacimiento DATE,
-        @telefono_contacto VARCHAR(20),
-        @telefono_emergencia VARCHAR(20),
-        @cobertura_medica VARCHAR(100),
-        @nro_cobertura_medica VARCHAR(50),
-        @id_medio_de_pago INT = 1,
-        @id_grupo_familiar INT = NULL,
-        @id_socio_rp INT,
-        @edad INT,
-        @categoria VARCHAR(50);
-
-
-    DECLARE cur CURSOR FOR 
-        SELECT nro_socio, nro_socio_rp, dni, nombre, apellido, email, fecha_nacimiento, 
-               telefono_contacto, telefono_emergencia, cobertura_medica, nro_cobertura_medica,nro_socio_rp
-        FROM socio.socio_temp2;
-
-    OPEN cur;
-    FETCH NEXT FROM cur INTO 
-        @nro_socio, @nro_socio_rp, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
-        @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica,@nro_socio_rp;
-
-    WHILE @@FETCH_STATUS = 0
-    BEGIN
-        SET @edad = DATEDIFF(YEAR, @fecha_nacimiento, GETDATE());
-        IF DATEADD(YEAR, @edad, @fecha_nacimiento) > GETDATE()
-            SET @edad = @edad - 1;
-
-        IF @edad <= 12
-            SET @categoria = 'Joven';
-        ELSE IF @edad BETWEEN 13 AND 17
-            SET @categoria = 'Adulto';
-        ELSE
-            SET @categoria = 'Mayor';
-
-        SET @id_grupo_familiar = NULL; -- Reset para cada iteración
-
-        -- Si hay Responsable de Pago, buscar su ID
-        IF @nro_socio_rp IS NOT NULL AND @nro_socio_rp <> ''
-        BEGIN
-            SELECT @id_socio_rp = id_socio FROM socio.socio WHERE nro_socio = @nro_socio_rp;
-
-            IF @id_socio_rp IS NOT NULL
-            BEGIN
-                -- Buscar si el familiar ya existe en grupo_familiar (por DNI)
-                SELECT @id_grupo_familiar = id_grupo_familiar 
-                FROM socio.grupo_familiar 
-                WHERE dni = @dni;
-
-                IF @id_grupo_familiar IS NULL
-                BEGIN
-                    INSERT INTO socio.grupo_familiar (nombre, apellido, dni, email, fecha_nacimiento, telefono, parentesco)
-                    VALUES (@nombre, @apellido, @dni, @email, @fecha_nacimiento, @telefono_contacto, 'Familiar');
-
-                    SET @id_grupo_familiar = SCOPE_IDENTITY();
-                END
-            END
-        END
-
-       EXEC socio.insertar_socio
-    @nro_socio = @nro_socio,
-    @dni = @dni,
-    @nombre = @nombre,
-    @apellido = @apellido,
-    @email = @email,
-    @fecha_nacimiento = @fecha_nacimiento,
-    @telefono_contacto = @telefono_contacto,
-    @telefono_emergencia = @telefono_emergencia,
-    @cobertura_medica = @cobertura_medica,
-    @nro_cobertura_medica = @nro_cobertura_medica,
-    @id_medio_de_pago = @id_medio_de_pago,
-    @id_grupo_familiar = @id_grupo_familiar,
-    @nro_socio_rp = @nro_socio_rp; -- <- nuevo parámetro correctamente pasado
-
-
-        FETCH NEXT FROM cur INTO 
-            @nro_socio, @nro_socio_rp, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
-            @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica,@nro_socio_rp;
-    END
-
-    CLOSE cur;
-    DEALLOCATE cur;
-END;
-GO*/
-/*CREATE OR ALTER PROCEDURE socio.procesar_socios_temp2
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE 
-        @nro_socio VARCHAR(10),
-        @nro_socio_rp VARCHAR(10),
-        @dni VARCHAR(15),
-        @nombre VARCHAR(50),
-        @apellido VARCHAR(50),
-        @email VARCHAR(100),
-        @fecha_nacimiento DATE,
-        @telefono_contacto VARCHAR(20),
-        @telefono_emergencia VARCHAR(20),
-        @cobertura_medica VARCHAR(100),
-        @nro_cobertura_medica VARCHAR(50),
-        @id_medio_de_pago INT = 1,
-        @id_grupo_familiar INT,
-        @id_socio_rp INT,
-        @edad INT,
-        @categoria VARCHAR(50);
-
-    DECLARE cur CURSOR FOR 
-        SELECT nro_socio, nro_socio_rp, dni, nombre, apellido, email, fecha_nacimiento, 
-               telefono_contacto, telefono_emergencia, cobertura_medica, nro_cobertura_medica
-        FROM socio.socio_temp2;
-
-    OPEN cur;
-    FETCH NEXT FROM cur INTO 
-        @nro_socio, @nro_socio_rp, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
-        @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica;
-
-    WHILE @@FETCH_STATUS = 0
-    BEGIN
-        SET @edad = DATEDIFF(YEAR, @fecha_nacimiento, GETDATE());
-        IF DATEADD(YEAR, @edad, @fecha_nacimiento) > GETDATE()
-            SET @edad = @edad - 1;
-
-        IF @edad <= 12
-            SET @categoria = 'Menor';
-        ELSE IF @edad BETWEEN 13 AND 17
-            SET @categoria = 'Cadete';
-        ELSE
-            SET @categoria = 'Mayor';
-
-        SET @id_grupo_familiar = NULL;
-
-        -- Si tiene Responsable de Pago
-        IF @nro_socio_rp IS NOT NULL AND @nro_socio_rp <> ''
-        BEGIN
-            SELECT @id_socio_rp = id_socio, @id_grupo_familiar = id_grupo_familiar 
-            FROM socio.socio 
-            WHERE nro_socio = @nro_socio_rp;
-
-            -- Si el RP existe pero no tiene grupo familiar, lo creamos
-            IF @id_socio_rp IS NOT NULL AND @id_grupo_familiar IS NULL
-            BEGIN
-                INSERT INTO socio.grupo_familiar (nombre, apellido, dni, email, fecha_nacimiento, telefono, parentesco)
-                SELECT nombre, apellido, dni, email, fecha_nacimiento, telefono_contacto, 'Responsable'
-                FROM socio.socio
-                WHERE id_socio = @id_socio_rp;
-
-                SET @id_grupo_familiar = SCOPE_IDENTITY();
-
-                -- Vinculamos el grupo al RP
-                UPDATE socio.socio
-                SET id_grupo_familiar = @id_grupo_familiar
-                WHERE id_socio = @id_socio_rp;
-            END
-
-            -- Si el socio no está aún como familiar, lo agregamos a la tabla de grupo_familiar
-            IF NOT EXISTS (SELECT 1 FROM socio.grupo_familiar WHERE dni = @dni)
-            BEGIN
-                INSERT INTO socio.grupo_familiar (nombre, apellido, dni, email, fecha_nacimiento, telefono, parentesco)
-                VALUES (@nombre, @apellido, @dni, @email, @fecha_nacimiento, @telefono_contacto, 'Familiar');
-            END
-        END
-
-        -- Llamamos al SP que inserta el socio en la tabla principal
-        EXEC socio.insertar_socio
-            @nro_socio = @nro_socio,
-            @dni = @dni,
-            @nombre = @nombre,
-            @apellido = @apellido,
-            @email = @email,
-            @fecha_nacimiento = @fecha_nacimiento,
-            @telefono_contacto = @telefono_contacto,
-            @telefono_emergencia = @telefono_emergencia,
-            @cobertura_medica = @cobertura_medica,
-            @nro_cobertura_medica = @nro_cobertura_medica,
-            @id_medio_de_pago = @id_medio_de_pago,
-            @id_grupo_familiar = @id_grupo_familiar,
-            @nro_socio_rp = @nro_socio_rp;
-
-        FETCH NEXT FROM cur INTO 
-            @nro_socio, @nro_socio_rp, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
-            @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica;
-    END
-
-    CLOSE cur;
-    DEALLOCATE cur;
-END;
-GO*/
 CREATE OR ALTER PROCEDURE socio.procesar_socios_temp2
 AS
 BEGIN
@@ -632,17 +419,13 @@ BEGIN
     DEALLOCATE cur;
 END;
 GO
-EXECUTE socio.procesar_socios_temp;
+
 EXECUTE socio.procesar_socios_temp2;
 
 select * from socio.socio
-truncate table  socio.socio
-delete socio.socio
-delete socio.grupo_familiar
-truncate table socio.grupo_familiar
 
 =================================================================
---IMPORTAR PAGOSSSS
+--IMPORTAR PAGOS
 =================================================================
 CREATE OR ALTER PROCEDURE factura.importar_excel_a_temporal
     @ruta NVARCHAR(255)
@@ -673,9 +456,12 @@ BEGIN
 
     EXEC sp_executesql @sql;
 END;
+
 GO
+
 EXEC factura.importar_excel_a_temporal @ruta = 'C:\Importar\Datos socios.xlsx';
 select* from ##PagoExcel
+
 
 CREATE OR ALTER PROCEDURE factura.procesar_pagos_temporales
 AS
@@ -760,22 +546,5 @@ GO
 
 
 EXEC factura.importar_excel_a_temporal @ruta = 'C:\Importar\Datos socios.xlsx';
+
 EXEC factura.procesar_pagos_temporales;
-
-delete factura.factura_mensual
-select* from factura.pago
-delete factura.pago
-SELECT nombre FROM factura.medio_de_pago;
-SELECT 
-    p.id_pago,
-    p.fecha_pago,
-    p.monto,
-    p.tipo_pago,
-    mp.nombre AS medio_de_pago,
-    fm.nro_socio_rp
-FROM factura.pago p
-JOIN factura.factura_mensual fm ON p.id_factura = fm.id_factura
-JOIN factura.medio_de_pago mp ON p.id_medio_de_pago = mp.id_medio_de_pago
-ORDER BY fm.nro_socio_rp DESC;
-
-SELECT * FROM factura.factura_mensual
