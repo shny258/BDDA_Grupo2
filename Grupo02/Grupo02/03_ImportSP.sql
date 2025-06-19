@@ -13,6 +13,41 @@ GO
 --=================================================================
 
 --=================================================================
+--Importar tabla de PRESENTISMO_ACTIVIDADES
+--=================================================================
+CREATE OR ALTER PROCEDURE actividad.importar_excel_Presentismo
+    @ruta NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF OBJECT_ID('actividad.presentismo','U') IS NOT NULL
+        DROP TABLE actividad.presentismo;
+
+   CREATE TABLE actividad.presentismo (
+	id_presentismo int identity(1,1) primary key,
+    nro_socio varchar(20),
+    activudad varchar(50), 
+    fecha_asistencia date,
+    asistencia varchar(1),
+	profesor varchar(50)
+);
+
+    DECLARE @sql NVARCHAR(MAX);
+    SET @sql = '
+    INSERT INTO actividad.presentismo
+    SELECT [Nro de Socio], [Actividad], [fecha de asistencia], [Asistencia], [Profesor]
+    FROM OPENROWSET(
+        ''Microsoft.ACE.OLEDB.12.0'',
+        ''Excel 12.0;Database=' + @ruta + ';HDR=YES;IMEX=1'',
+        ''SELECT * FROM [presentismo_actividades$]''
+    )';
+
+    EXEC sp_executesql @sql;
+END;
+GO
+
+--=================================================================
 --Importar tabla de OPEN_METEO_BUENOS_AIRES
 --=================================================================
 CREATE OR ALTER PROCEDURE factura.importar_clima_csv @path NVARCHAR(255) as
