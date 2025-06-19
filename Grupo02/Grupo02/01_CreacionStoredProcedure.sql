@@ -842,20 +842,11 @@ GO
 -- ==========================================
 CREATE PROCEDURE socio.insertar_categoria_socio
     @nombre VARCHAR(50),
-    @edad_min INT,
-    @edad_max INT,
-    @costo INT
+    @costo INT,
+	@fecha_vigencia date
 AS
 BEGIN
 	--validaciones
-    IF @edad_min < 0 OR @edad_max < 0 BEGIN
-        RAISERROR('Las edades no pueden ser negativas', 16, 1);
-        RETURN;
-    END
-    IF @edad_max < @edad_min BEGIN
-        RAISERROR('La edad máxima no puede ser menor que la minima', 16, 1);
-        RETURN;
-    END
     IF @costo <= 0 BEGIN
         RAISERROR('El costo debe ser mayor a cero', 16, 1);
         RETURN;
@@ -866,8 +857,8 @@ BEGIN
         RETURN;
     END
 	--termina validacion
-    INSERT INTO socio.categoria_socio (nombre, edad_min, edad_max, costo)
-    VALUES (@nombre, @edad_min, @edad_max, @costo);
+    INSERT INTO socio.categoria_socio (nombre, fecha_vigencia, costo)
+    VALUES (@nombre, @fecha_vigencia, @costo);
 END;
 GO
 
@@ -876,32 +867,18 @@ GO
 -- ==========================================
 CREATE PROCEDURE socio.modificar_categoria_socio
     @nombre VARCHAR(50),
-    @edad_min INT,
-    @edad_max INT,
+	@fecha_vigencia date,
     @costo INT
 AS
 BEGIN
 	--validaciones
-    IF NOT EXISTS (SELECT 1 FROM socio.categoria_socio WHERE nombre = @nombre) BEGIN
-        RAISERROR('La categoría no existe', 16, 1);
-        RETURN;
-    END
-    IF @edad_min < 0 OR @edad_max < 0 BEGIN
-        RAISERROR('Las edades no pueden ser negativas', 16, 1);
-        RETURN;
-    END
-    IF @edad_max < @edad_min BEGIN
-        RAISERROR('La edad máxima no puede ser menor que la minima', 16, 1);
-        RETURN;
-    END
     IF @costo <= 0 BEGIN
         RAISERROR('El costo debe ser mayor a cero', 16, 1);
         RETURN;
     END
 	--termina validacion
     UPDATE socio.categoria_socio
-    SET edad_min = @edad_min,
-        edad_max = @edad_max,
+    SET fecha_vigencia = @fecha_vigencia,
         costo = @costo
     WHERE nombre = @nombre;
 END;
@@ -930,7 +907,8 @@ GO
 -- ==========================================
 CREATE PROCEDURE actividad.insertar_actividad
     @nombre VARCHAR(50),
-    @costo_mensual NUMERIC(15,2)
+    @costo_mensual NUMERIC(15,2),
+	@fecha_vigencia date
 AS
 BEGIN
 	--validaciones
@@ -940,8 +918,8 @@ BEGIN
 		return
 	end
 	--termina validacion
-    INSERT INTO actividad.actividad (nombre, costo_mensual)
-    VALUES (@nombre, @costo_mensual);
+    INSERT INTO actividad.actividad (nombre, costo_mensual, fecha_vigencia)
+    VALUES (@nombre, @costo_mensual, @fecha_vigencia);
 END;
 GO
 
@@ -951,7 +929,8 @@ GO
 CREATE PROCEDURE actividad.modificar_actividad
     @id INT,
     @nombre VARCHAR(50),
-    @costo_mensual NUMERIC(15,2)
+    @costo_mensual NUMERIC(15,2),
+	@fecha_vigencia DATE
 AS
 BEGIN
 	--validaciones
@@ -967,7 +946,7 @@ BEGIN
 	end
 	--termina validacion
     UPDATE actividad.actividad
-    SET nombre = @nombre, costo_mensual = @costo_mensual
+    SET nombre = @nombre, costo_mensual = @costo_mensual, fecha_vigencia = @fecha_vigencia
     WHERE id_actividad = @id;
 END;
 GO
@@ -993,25 +972,26 @@ GO
 -- ==========================================
 CREATE PROCEDURE actividad.insertar_actividad_extra
     @nombre VARCHAR(50),
-    @costo_adulto NUMERIC(15,2),
-    @costo_menor NUMERIC(15,2)
+    @costo_socio NUMERIC(15,2),
+    @costo_invitado NUMERIC(15,2),
+	@fecha_vigencia date
 AS
 BEGIN
 	--validaciones
-    IF @costo_adulto IS NULL OR @costo_adulto < 0
+    IF  @costo_socio < 0
     BEGIN
-        RAISERROR('Costo de adulto invalido', 16, 1);
+        RAISERROR('Costo de socio invalido', 16, 1);
         RETURN;
     END
 
-    IF @costo_menor < 0
+    IF @costo_invitado < 0
     BEGIN
-        RAISERROR('Costo de menor invalido', 16, 1);
+        RAISERROR('Costo de invitado invalido', 16, 1);
         RETURN;
     END
 	--termina validacion
-    INSERT INTO actividad.actividad_extra (nombre, costo_adulto, costo_menor)
-    VALUES (@nombre, @costo_adulto, @costo_menor);
+    INSERT INTO actividad.actividad_extra (nombre, costo_socio, costo_invitado, fecha_vigencia)
+    VALUES (@nombre, @costo_socio, @costo_invitado, @fecha_vigencia);
 END;
 GO
 -- ==========================================
@@ -1020,8 +1000,9 @@ GO
 CREATE PROCEDURE actividad.modificar_actividad_extra
     @id INT,
     @nombre VARCHAR(50),
-    @costo_adulto NUMERIC(15,2),
-    @costo_menor NUMERIC(15,2)
+    @costo_socio NUMERIC(15,2),
+    @costo_invitado NUMERIC(15,2),
+	@fecha_vigencia date
 AS
 BEGIN
 	--validaciones
@@ -1031,22 +1012,23 @@ BEGIN
         RETURN;
     END
 
-    IF @costo_adulto IS NULL OR @costo_adulto < 0
+    IF  @costo_socio < 0
     BEGIN
-        RAISERROR('Costo de adulto invalido', 16, 1);
+        RAISERROR('Costo de socio invalido', 16, 1);
         RETURN;
     END
 
-    IF @costo_menor IS NULL OR @costo_menor < 0
+    IF @costo_invitado < 0
     BEGIN
-        RAISERROR('Costo de menor invalido', 16, 1);
-        RETURN;
-    END
+        RAISERROR('Costo de invitado invalido', 16, 1);
+        REturn
+	end
 	--termina validacion
     UPDATE actividad.actividad_extra
     SET nombre = @nombre,
-        costo_adulto = @costo_adulto,
-        costo_menor = @costo_menor
+        costo_socio = @costo_socio,
+        costo_invitado = @costo_invitado,
+		fecha_vigencia = @fecha_vigencia
     WHERE id_actividad_extra = @id;
 END;
 GO
