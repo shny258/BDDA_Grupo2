@@ -563,3 +563,181 @@ EXEC factura.procesar_pagos_temporales;
 
 
 select * from factura.pago
+
+
+--=================================================================
+--SP DE TARIFAS 
+--=================================================================
+
+
+
+CREATE OR ALTER PROCEDURE actividad.importar_actividades_regulares
+    @path VARCHAR(255)
+AS
+BEGIN
+    DECLARE @sql NVARCHAR(MAX);
+    SET @sql = '
+        SELECT * INTO #tarifa_mensual
+        FROM OPENROWSET(
+            ''Microsoft.ACE.OLEDB.12.0'',
+            ''Excel 12.0;Database=' + @path + ';HDR=YES;'',
+            ''SELECT * FROM [Tarifas$A2:C8]''
+        );
+
+        DECLARE @nombre VARCHAR(50), @costo NUMERIC(15,2);
+        DECLARE actividades_cursor CURSOR FOR
+        SELECT [Actividad], TRY_CAST([Valor por mes] AS NUMERIC(15,2))
+        FROM #tarifa_mensual;
+
+        OPEN actividades_cursor;
+        FETCH NEXT FROM actividades_cursor INTO @nombre, @costo;
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            EXEC actividad.insertar_actividad @nombre, @costo;
+            FETCH NEXT FROM actividades_cursor INTO @nombre, @costo;
+        END
+        CLOSE actividades_cursor;
+        DEALLOCATE actividades_cursor;
+
+        DROP TABLE #tarifa_mensual;
+    ';
+    EXEC sp_executesql @sql;
+END;
+GO
+
+SELECT * FROM OPENROWSET(
+            'Microsoft.ACE.OLEDB.12.0',
+            'Excel 12.0;Database=C:\Importar\Datos socios.xlsx ;HDR=YES;',
+            'SELECT * FROM [Tarifas$B2:D8]'
+        );
+
+
+EXEC actividad.importar_actividades_regulares
+    @path = 'C:\Importar\Datos socios.xlsx';
+
+select * from actividad.actividad
+
+--Hacer cambios en la tabla de actividad y sp agregando campo vigencia
+
+--------------------------------------------
+--------------------------------------------
+CREATE OR ALTER PROCEDURE socio.importar_categorias_socios
+    @path_archivo VARCHAR(255)
+AS
+BEGIN
+    DECLARE @sql NVARCHAR(MAX);
+    SET @sql = '
+        SELECT * INTO #tarifa_categoria
+        FROM OPENROWSET(
+            ''Microsoft.ACE.OLEDB.12.0'',
+            ''Excel 12.0;Database=' + @path_archivo + ';HDR=YES;'',
+            ''SELECT * FROM [Tarifas$B10:D13]''
+        );
+
+        DECLARE @categoria VARCHAR(50), @costo_categoria INT;
+        DECLARE categoria_cursor CURSOR FOR
+        SELECT [Categoria socio], TRY_CAST([Valor cuota] AS INT)
+        FROM #tarifa_categoria;
+
+        OPEN categoria_cursor;
+        FETCH NEXT FROM categoria_cursor INTO @categoria, @costo_categoria;
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            IF @categoria = ''Mayor''
+                EXEC socio.insertar_categoria_socio @categoria, 18, 99, @costo_categoria;
+            ELSE IF @categoria = ''Cadete''
+                EXEC socio.insertar_categoria_socio @categoria, 13, 17, @costo_categoria;
+            ELSE IF @categoria = ''Menor''
+                EXEC socio.insertar_categoria_socio @categoria, 0, 12, @costo_categoria;
+
+            FETCH NEXT FROM categoria_cursor INTO @categoria, @costo_categoria;
+        END
+        CLOSE categoria_cursor;
+        DEALLOCATE categoria_cursor;
+
+        DROP TABLE #tarifa_categoria;
+    ';
+    EXEC sp_executesql @sql;
+END;
+GO
+
+EXEC socio.importar_categorias_socios
+    @path_archivo = 'C:\Importar\Datos socios.xlsx';
+
+	select * from socio.categoria_socio
+
+SELECT * FROM OPENROWSET(
+            'Microsoft.ACE.OLEDB.12.0',
+            'Excel 12.0;Database=C:\Importar\Datos socios.xlsx ;HDR=YES;',
+            'SELECT * FROM [Tarifas$B10:D13]'
+        );
+
+--cambiar lo de edad min y max
+--Agregar fecha de vigencia
+
+--------------------------------------------
+--------------------------------------------
+
+CREATE OR ALTER PROCEDURE actividad.importar_tarifas_pileta
+    @path_archivo VARCHAR(255)
+AS
+BEGIN
+    DECLARE @sql NVARCHAR(MAX);
+    SET @sql = '
+        SELECT * INTO #tarifa_pileta
+        FROM OPENROWSET(
+            ''Microsoft.ACE.OLEDB.12.0'',
+            ''Excel 12.0;Database=' + @path_archivo + ';HDR=YES;'',
+            ''SELECT * FROM [Tarifas$B16:F22]''
+        );
+
+        DECLARE @f1 VARCHAR(50), @tipo_tarifa_actual VARCHAR(50), @categoria VARCHAR(50);
+        DECLARE @valor_socios NUMERIC(15,2), @valor_invitados NUMERIC(15,2);
+        DECLARE @vigente_hasta DATE;
+        DECLARE @nombre_completo VARCHAR(100);
+
+        DECLARE c_tarifas CURSOR FOR
+        SELECT F1, F2, TRY_CAST(Socios AS NUMERIC(15,2)), TRY_CAST(Invitados AS NUMERIC(15,2)), [Vigente hasta]
+        FROM #tarifa_pileta;
+
+        OPEN c_tarifas;
+        FETCH NEXT FROM c_tarifas INTO @f1, @categoria, @valor_socios, @valor_invitados, @vigente_hasta;
+
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            IF @f1 IS NOT NULL
+                SET @tipo_tarifa_actual = @f1;
+
+            SET @nombre_completo = ''Pileta - '' + @tipo_tarifa_actual + '' - '' + @categoria;
+
+            EXEC actividad.insertar_actividad_extra @nombre_completo, @valor_socios, @valor_invitados;
+
+            FETCH NEXT FROM c_tarifas INTO @f1, @categoria, @valor_socios, @valor_invitados, @vigente_hasta;
+        END
+
+        CLOSE c_tarifas;
+        DEALLOCATE c_tarifas;
+
+        DROP TABLE #tarifa_pileta;
+    ';
+    EXEC sp_executesql @sql;
+END;
+GO
+
+
+
+EXEC actividad.importar_tarifas_pileta
+    @path_archivo = 'C:\Importar\Datos socios.xlsx';
+
+select * from actividad.actividad_extra
+
+
+   SELECT * 
+        FROM OPENROWSET(
+            'Microsoft.ACE.OLEDB.12.0',
+            'Excel 12.0;Database=C:\Importar\Datos socios.xlsx;HDR=YES;',
+            'SELECT * FROM [Tarifas$B16:F22]'
+        );
+
+
+--cambiar tabla actividad extra poner costo de socio y costo de invitado (sacar menor y mayor)
