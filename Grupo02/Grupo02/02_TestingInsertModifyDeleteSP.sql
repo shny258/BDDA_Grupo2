@@ -85,29 +85,19 @@ EXEC factura.eliminar_medio_de_pago
 --  INSERTAR CATEGORIA SOCIO - CORRECTO
 EXEC socio.insertar_categoria_socio 
     @nombre = 'mayor',
-    @edad_min = 18,
-    @edad_max = 60,
-    @costo = 3000;
-
---  INSERTAR CATEGORIA SOCIO - ERROR (edad_max < edad_min)
-EXEC socio.insertar_categoria_socio 
-    @nombre = 'errorEdad',
-    @edad_min = 60,
-    @edad_max = 18,
+	@fecha_vigencia = '2025-02.26',
     @costo = 3000;
 
 --  MODIFICAR CATEGORIA SOCIO - CORRECTO (usar nombre existente, ej: 'mayor')
 EXEC socio.modificar_categoria_socio 
     @nombre = 'mayor',
-    @edad_min = 20,
-    @edad_max = 65,
+    @fecha_vigencia = '2025-02.26',
     @costo = 3500;
 
 --  MODIFICAR CATEGORIA SOCIO - ERROR (nombre no existe)
 EXEC socio.modificar_categoria_socio 
     @nombre = 'inexistente',
-    @edad_min = 20,
-    @edad_max = 65,
+    @fecha_vigencia = '2025-02.26',
     @costo = 3500;
 
 --  ELIMINAR CATEGORIA SOCIO - CORRECTO (usar nombre existente, ej: 'mayor')
@@ -167,24 +157,28 @@ EXEC socio.eliminar_grupo_familiar @id_grupo_familiar = 9999;
 --  INSERTAR ACTIVIDAD - CORRECTO
 EXEC actividad.insertar_actividad 
     @nombre = 'Futsal',
-    @costo_mensual = 2500;
+    @costo_mensual = 2500,
+	@fecha_vigencia = '2025-02.26';
 
 --  INSERTAR ACTIVIDAD - ERROR (costo negativo)
 EXEC actividad.insertar_actividad 
     @nombre = 'Spinning',
-    @costo_mensual = -100;
+    @costo_mensual = -100,
+	@fecha_vigencia = '2025-02.26';
 
 --  MODIFICAR ACTIVIDAD - CORRECTO (usar ID existente, por ejemplo: 1)
 EXEC actividad.modificar_actividad 
     @id = 1,
     @nombre = 'Baile artistico',
-    @costo_mensual = 3000;
+    @costo_mensual = 3000,
+	@fecha_vigencia = '2025-02.26';
 
 --  MODIFICAR ACTIVIDAD - ERROR (ID inexistente)
 EXEC actividad.modificar_actividad 
     @id = 999,
     @nombre = 'Aeróbicos',
-    @costo_mensual = 2000;
+    @costo_mensual = 2000,
+	@fecha_vigencia = '2025-02.26';
 
 --  eliminar ACTIVIDAD - CORRECTO (usar ID existente, por ejemplo: 1)
 EXEC actividad.eliminar_actividad @id = 1;
@@ -259,6 +253,7 @@ EXEC factura.eliminar_descuento @id = 9999;
 
 --  INSERTAR SOCIO - CORRECTO
 EXEC socio.insertar_socio 
+	@nro_socio = 'sn-2001',
     @dni = '12345478',
     @nombre = 'Juan',
     @apellido = 'Perez',
@@ -270,10 +265,11 @@ EXEC socio.insertar_socio
     @nro_cobertura_medica = '12345',
     @id_medio_de_pago = 1,
     @id_grupo_familiar = 1,
-    @id_categoria = 'mayor';
+	@nro_socio_rp = NULL;
 	SELECT * FROM  socio.socio
 --  INSERTAR SOCIO - ERROR (nombre vacio)
 EXEC socio.insertar_socio 
+	@nro_socio = 'sn-2002',
     @dni = '12345679',
     @nombre = '',
     @apellido = 'Perez',
@@ -285,7 +281,7 @@ EXEC socio.insertar_socio
     @nro_cobertura_medica = '12345',
     @id_medio_de_pago = 1,
     @id_grupo_familiar = 1,
-    @id_categoria = 'mayor';
+    @nro_socio_rp = NULL;
 
 --  MODIFICAR SOCIO - CORRECTO (usar id_socio valido, ej: 1)
 EXEC socio.modificar_socio 
@@ -402,24 +398,28 @@ EXEC actividad.eliminar_reserva_sum @id_reserva = 999;
 --  INSERTAR ACTIVIDAD - CORRECTO
 EXEC actividad.insertar_actividad 
     @nombre = 'Futsal',
-    @costo_mensual = 2500;
+    @costo_mensual = 2500,
+	@fecha_vigencia = '2025-02-26';
 
 --  INSERTAR ACTIVIDAD - ERROR (costo negativo)
 EXEC actividad.insertar_actividad 
     @nombre = 'Spinning',
-    @costo_mensual = -100;
+    @costo_mensual = -100,
+	@fecha_vigencia = '2025-02-26';
 
 --  MODIFICAR ACTIVIDAD - CORRECTO (usar ID existente, por ejemplo: 1)
 EXEC actividad.modificar_actividad 
     @id = 1,
     @nombre = 'Baile artistico',
-    @costo_mensual = 3000;
+    @costo_mensual = 3000,
+	@fecha_vigencia = '2025-02-26';
 
 --  MODIFICAR ACTIVIDAD - ERROR (ID inexistente)
 EXEC actividad.modificar_actividad 
     @id = 999,
     @nombre = 'Aeróbicos',
-    @costo_mensual = 2000;
+    @costo_mensual = 2000,
+	@fecha_vigencia = '2025-02-26';
 
 -- Eliminar ACTIVIDAD - CORRECTO (usar ID existente, por ejemplo: 1)
 EXEC actividad.eliminar_actividad @id = 1;
@@ -435,28 +435,25 @@ EXEC actividad.eliminar_actividad @id = 999;
 --  INSERTAR ACTIVIDAD EXTRA - CORRECTO
 EXEC actividad.insertar_actividad_extra 
     @nombre = 'Colonia verano',
-    @costo_adulto = 1500,
-    @costo_menor = 800;
-
---  INSERTAR ACTIVIDAD EXTRA - ERROR (costo menor negativo)
-EXEC actividad.insertar_actividad_extra 
-    @nombre = 'Excursión',
-    @costo_adulto = 1200,
-    @costo_menor = -500;
+    @costo_socio = 1500,
+    @costo_invitado = 800,
+	@fecha_vigencia = '2025-02-26';
 
 --  MODIFICAR ACTIVIDAD EXTRA - CORRECTO (usar ID existente, por ejemplo: 1)
 EXEC actividad.modificar_actividad_extra 
     @id = 1,
     @nombre = 'Sum',
-    @costo_adulto = 1800,
-    @costo_menor = 900;
+    @costo_socio = 1500,
+    @costo_invitado = 800,
+	@fecha_vigencia = '2025-02-26';
 
 --  MODIFICAR ACTIVIDAD EXTRA - ERROR (ID inexistente)
 EXEC actividad.modificar_actividad_extra 
     @id = 999,
     @nombre = 'tenis',
-    @costo_adulto = 1000,
-    @costo_menor = 500;
+    @costo_socio = 1500,
+    @costo_invitado = 800,
+	@fecha_vigencia = '2025-02-26';
 
 --  Eliminar ACTIVIDAD EXTRA - CORRECTO (usar ID existente, por ejemplo: 1)
 EXEC actividad.eliminar_actividad_extra @id = 1;
