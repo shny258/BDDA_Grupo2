@@ -41,8 +41,7 @@ CREATE TABLE factura.medio_de_pago (
 -- Tabla de categorías de socio
 CREATE TABLE socio.categoria_socio (
     nombre varchar(50) PRIMARY KEY,
-    edad_min INT,
-    edad_max INT,
+	fecha_vigencia date,
 	costo int
 );
 
@@ -92,15 +91,17 @@ CREATE TABLE socio.membresia (
 CREATE TABLE actividad.actividad (
     id_actividad int identity PRIMARY KEY,
     nombre VARCHAR(50) UNIQUE NOT NULL,
-    costo_mensual NUMERIC(15,2)
+    costo_mensual NUMERIC(15,2),
+	fecha_vigencia DATE 
 );
 
 -- Actividades extra (colonia, pileta recreativa, etc.)
 CREATE TABLE actividad.actividad_extra (
     id_actividad_extra int identity PRIMARY KEY,
     nombre VARCHAR(50) UNIQUE NOT NULL,
-    costo_adulto NUMERIC(15,2),
-	costo_menor NUMERIC(15,2)
+    costo_socio NUMERIC(15,2),
+	costo_invitado NUMERIC(15,2),
+	fecha_vigencia DATE 
 );
 
 -- Inscripción a actividades deportivas regulares

@@ -1004,7 +1004,7 @@ BEGIN
         RETURN;
     END
 
-    IF @costo_menor IS NULL OR @costo_menor < 0
+    IF @costo_menor < 0
     BEGIN
         RAISERROR('Costo de menor invalido', 16, 1);
         RETURN;
