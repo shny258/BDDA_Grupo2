@@ -173,9 +173,9 @@ BEGIN
             @telefono_emergencia = @telefono_emergencia,
             @cobertura_medica = @cobertura_medica,
             @nro_cobertura_medica = @nro_cobertura_medica,
-            @id_medio_de_pago = @id_medio_de_pago,
+            @id_medio_de_pago = 1,
           @id_grupo_familiar = @id_grupo_familiar,
-@nro_socio_rp = @nro_socio_rp;
+			@nro_socio_rp = @nro_socio_rp;
 
         FETCH NEXT FROM cur INTO @nro_socio, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
                                  @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica,@nro_socio_rp;
@@ -186,7 +186,15 @@ BEGIN
 END;
 GO
 
+select * from factura.medio_de_pago
+
 EXECUTE socio.procesar_socios_temp;
+
+ select * from socio.socio
+
+ truncate table socio.socio
+
+
 
 --select* from socio.socio
 =====================================================
@@ -258,7 +266,8 @@ GO
 	EXEC socio.importar_socios_excel2
     @ruta = 'C:\Importar\Datos socios.xlsx';
 
-	select* from socio.socio_temp2
+	-- select* from socio.socio_temp2
+		select * from socio.socio
 
 CREATE OR ALTER PROCEDURE socio.procesar_socios_temp2
 AS
@@ -548,3 +557,4 @@ GO
 EXEC factura.importar_excel_a_temporal @ruta = 'C:\Importar\Datos socios.xlsx';
 
 EXEC factura.procesar_pagos_temporales;
+

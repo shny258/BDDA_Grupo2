@@ -66,7 +66,7 @@ CREATE TABLE socio.socio (
 	dni VARCHAR(15)  unique NOT NULL,
     nombre VARCHAR(50) NOT NULL,
     apellido VARCHAR(50) NOT NULL,
-    email VARCHAR(100) UNIQUE  NULL,
+    email VARCHAR(100) NULL,
     fecha_nacimiento DATE NOT NULL,
     telefono_contacto VARCHAR(20),
     telefono_emergencia VARCHAR(20),
