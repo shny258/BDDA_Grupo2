@@ -1167,7 +1167,150 @@ BEGIN
 END;
 GO
 
+-- ==========================================
+-- INSERTAR PRESENTISMO
+-- ==========================================
+CREATE OR ALTER PROCEDURE actividad.insertar_presentismo
+(
+    @nro_socio VARCHAR(10),
+    @nombre_actividad VARCHAR(50),
+    @fecha_asistencia DATE,
+    @asistencia CHAR(1),
+    @profesor VARCHAR(100) = NULL
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
 
+    -- Validar nro_socio
+    IF @nro_socio IS NULL OR LTRIM(RTRIM(@nro_socio)) = ''
+    BEGIN
+        RAISERROR('nro_socio es obligatorio', 16, 1);
+        RETURN;
+    END
+
+    IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE nro_socio = @nro_socio)
+    BEGIN
+        RAISERROR('nro_socio no existe en socio.socio', 16, 1);
+        RETURN;
+    END
+
+    -- Validar nombre_actividad
+    IF @nombre_actividad IS NULL OR LTRIM(RTRIM(@nombre_actividad)) = ''
+    BEGIN
+        RAISERROR('nombre_actividad es obligatorio', 16, 1);
+        RETURN;
+    END
+
+    IF NOT EXISTS (SELECT 1 FROM actividad.actividad WHERE nombre = @nombre_actividad)
+    BEGIN
+        RAISERROR('nombre_actividad no existe en actividad.actividad', 16, 1);
+        RETURN;
+    END
+
+    -- Validar fecha_asistencia
+    IF @fecha_asistencia IS NULL
+    BEGIN
+        RAISERROR('fecha_asistencia es obligatorio', 16, 1);
+        RETURN;
+    END
+
+    -- Validar asistencia
+    IF @asistencia NOT IN ('P', 'A')
+    BEGIN
+        RAISERROR('asistencia solo puede ser P o A', 16, 1);
+        RETURN;
+    END
+
+    -- Tomar los IDs
+    DECLARE @id_socio INT, @id_actividad INT;
+    SELECT @id_socio = id_socio FROM socio.socio WHERE nro_socio = @nro_socio;
+    SELECT @id_actividad = id_actividad FROM actividad.actividad WHERE nombre = @nombre_actividad;
+
+    -- Validar duplicado
+    IF EXISTS (
+        SELECT 1
+        FROM actividad.presentismo
+        WHERE id_socio = @id_socio
+          AND id_actividad = @id_actividad
+          AND fecha_asistencia = @fecha_asistencia
+    )
+    BEGIN
+        RAISERROR('Ya existe un registro para ese socio, actividad y fecha', 16, 1);
+        RETURN;
+    END
+
+    -- Insertar
+    INSERT INTO actividad.presentismo (id_socio, id_actividad, fecha_asistencia, asistencia, profesor)
+    VALUES (@id_socio, @id_actividad, @fecha_asistencia, @asistencia, @profesor);
+
+END;
+GO
+
+-- ==========================================
+-- MODIFICAR PRESENTISMO
+-- ==========================================
+CREATE OR ALTER PROCEDURE actividad.modificar_presentismo
+(
+	@id_socio int,
+    @id_actividad int,
+    @fecha_asistencia DATE,
+    @asistencia CHAR(1),
+    @profesor VARCHAR(100)
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF NOT EXISTS (SELECT 1 FROM actividad.presentismo
+        WHERE id_socio = @id_socio
+          AND id_actividad = @id_actividad
+          AND fecha_asistencia = @fecha_asistencia)
+    BEGIN
+        RAISERROR('No existe este presentismo', 16, 1);
+        RETURN;
+    END
+    -- Validar asistencia
+    IF @asistencia NOT IN ('P', 'A')
+    BEGIN
+        RAISERROR('asistencia solo puede ser P o A', 16, 1);
+        RETURN;
+    END
+	--Modificar
+	UPDATE actividad.presentismo
+    SET @asistencia = @asistencia,
+        @profesor = @profesor
+    WHERE id_socio = @id_socio
+          AND id_actividad = @id_actividad
+          AND fecha_asistencia = @fecha_asistencia
+END;
+GO
+
+-- ==========================================
+-- ELIMINAR PRESENTISMO
+-- ==========================================
+CREATE OR ALTER PROCEDURE actividad.eliminar_presentismo
+(
+	@id_socio int,
+    @id_actividad int,
+    @fecha_asistencia DATE
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF NOT EXISTS (SELECT 1 FROM actividad.presentismo
+        WHERE id_socio = @id_socio
+          AND id_actividad = @id_actividad
+          AND fecha_asistencia = @fecha_asistencia)
+    BEGIN
+        RAISERROR('No existe este presentismo', 16, 1);
+        RETURN;
+    END
+	--Eliminar
+	DELETE FROM actividad.presentismo WHERE id_socio = @id_socio
+          AND id_actividad = @id_actividad
+          AND fecha_asistencia = @fecha_asistencia;
+END;
+GO
 
 -- ==========================================
 -- INSERTAR RESERVA DE SUM

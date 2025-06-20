@@ -1,3 +1,15 @@
+--El archivo .sql con el script debe incluir comentarios donde consten este enunciado, 
+--la fecha de entrega,
+--número de grupo, nombre de la materia, nombres y DNI de los alumnos. Entregar todo en un zip 
+--(observar las pautas para nomenclatura antes expuestas) mediante la sección de prácticas de MIEL. 
+--Solo uno de los miembros del grupo debe hacer la entrega
+-- Fecha entrega 23/05/2025
+--Numero grupo: 02
+--Base De Datos Aplicada
+--Celso quelle Nicolas DNI:44382822
+--Paz Curtet  Facundo DNI:44553403  
+--Contti Abel  DNI:394878489  
+--Martins Louro  Luciano DNI:42364189  
 USE Com5600G02
 GO
 --=================================================================
