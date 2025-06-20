@@ -53,7 +53,7 @@ EXEC factura.generar_facturas_mensuales @anio = 2024; --Generar Facturas?
 --=================================================================
 --Importar E INSERTAR tabla de PAGOS CUOTAS
 --=================================================================
-EXEC factura.importar_excel_a_temporal @ruta = '[PATH]\Datos socios.xlsx';
+EXEC factura.importar_excel_a_temporal @ruta = 'C:\Importar\Datos socios.xlsx';
 EXEC factura.procesar_pagos_temporales;
 --select * from factura.pago
 

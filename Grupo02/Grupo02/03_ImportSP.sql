@@ -469,7 +469,7 @@ CREATE OR ALTER PROCEDURE factura.procesar_pagos_temporales
 AS
 BEGIN
     SET NOCOUNT ON;
-
+ 
     DECLARE @id_factura INT,
             @id_medio_de_pago INT,
             @tipo_pago VARCHAR(20) = 'Pago completo',
@@ -478,30 +478,29 @@ BEGIN
             @responsable NVARCHAR(100),
             @medio NVARCHAR(50),
             @msg NVARCHAR(200);
-
+ 
     DECLARE pagos_cursor CURSOR FOR
         SELECT fecha_pago, responsable_pago, monto, medio_de_pago
         FROM ##PagoExcel;
-
+ 
     OPEN pagos_cursor;
-
+ 
     FETCH NEXT FROM pagos_cursor INTO @fecha_pago, @responsable, @monto, @medio;
-
+ 
     WHILE @@FETCH_STATUS = 0
     BEGIN
-        SET @id_factura = NULL;  -- Resetear antes de buscar factura nueva
-
-        
+        SET @id_factura = NULL;
+ 
         SELECT TOP 1 @id_factura = f.id_factura
         FROM factura.factura_mensual f
         WHERE f.nro_socio = @responsable
-          
+          AND f.estado = 'Pendiente'
           AND NOT EXISTS (
               SELECT 1 FROM factura.pago p
               WHERE p.id_factura = f.id_factura
           )
         ORDER BY f.fecha_emision;
-
+ 
         IF @id_factura IS NULL
         BEGIN
             PRINT '?? No se encontró factura válida para socio ' + @responsable;
@@ -509,11 +508,11 @@ BEGIN
         ELSE
         BEGIN
             PRINT 'Pagando factura ' + CAST(@id_factura AS VARCHAR) + ' para socio ' + @responsable + ' con monto ' + CAST(@monto AS VARCHAR);
-
+ 
             SELECT @id_medio_de_pago = id_medio_de_pago
             FROM factura.medio_de_pago
             WHERE LOWER(nombre) = LOWER(@medio);
-
+ 
             IF @id_medio_de_pago IS NULL
             BEGIN
                 PRINT '? Medio de pago "' + @medio + '" no encontrado para socio ' + @responsable;
@@ -521,13 +520,20 @@ BEGIN
             ELSE
             BEGIN
                 BEGIN TRY
+                    -- Insertar el pago
                     EXEC factura.insertar_pago
                         @id_factura = @id_factura,
                         @id_medio_de_pago = @id_medio_de_pago,
                         @tipo_pago = @tipo_pago,
                         @fecha_pago = @fecha_pago,
                         @monto = @monto,
-						 @nro_socio =@responsable;
+                        @nro_socio = @responsable;
+ 
+                    -- ? Marcar la factura como 'Pago completado'
+                    UPDATE factura.factura_mensual
+                    SET estado = 'Pago completado'
+                    WHERE id_factura = @id_factura;
+ 
                 END TRY
                 BEGIN CATCH
                     SET @msg = ERROR_MESSAGE();
@@ -535,10 +541,10 @@ BEGIN
                 END CATCH
             END
         END
-
+ 
         FETCH NEXT FROM pagos_cursor INTO @fecha_pago, @responsable, @monto, @medio;
     END
-
+ 
     CLOSE pagos_cursor;
     DEALLOCATE pagos_cursor;
 END;
