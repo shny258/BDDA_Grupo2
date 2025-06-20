@@ -926,7 +926,7 @@ GO
 -- ==========================================
 --  MODIFICAR ACTIVIDAD
 -- ==========================================
-CREATE PROCEDURE actividad.modificar_actividad
+CREATE or alter PROCEDURE actividad.modificar_actividad
     @id INT,
     @nombre VARCHAR(50),
     @costo_mensual NUMERIC(15,2),

@@ -605,6 +605,20 @@ GO
 
 EXEC actividad.importar_actividades_regulares
     @path = 'C:\Importar\Datos socios.xlsx';
+	DECLARE @costo NUMERIC(15,2);
+DECLARE @fecha DATE;
+
+SELECT 
+    @costo = costo_mensual,
+    @fecha = fecha_vigencia
+FROM actividad.actividad
+WHERE id_actividad = 12;
+
+EXEC actividad.modificar_actividad 
+    @id = 12, 
+    @nombre = 'Ajedrez', 
+    @costo_mensual = @costo, 
+    @fecha_vigencia = @fecha;
 
 select * from actividad.actividad
 
@@ -719,3 +733,116 @@ EXEC actividad.importar_tarifas_pileta
     @path_archivo = 'C:\Importar\Datos socios.xlsx';
 
 select * from actividad.actividad_extra
+
+
+---========================================
+--IMPORTAR PRESENTISMO
+---=========================================
+
+CREATE OR ALTER PROCEDURE actividad.importar_presentismo_excel
+    @ruta NVARCHAR(500)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF OBJECT_ID('tempdb..##PresentismoExcel') IS NOT NULL
+        DROP TABLE ##PresentismoExcel;
+
+    CREATE TABLE ##PresentismoExcel (
+        nro_socio VARCHAR(50),
+        nombre_actividad VARCHAR(100),
+        fecha_asistencia DATE,  -- Cambié a DATE
+        asistencia CHAR(1),
+        profesor VARCHAR(100)
+    );
+
+    DECLARE @sql NVARCHAR(MAX);
+    SET @sql = N'
+        INSERT INTO ##PresentismoExcel (nro_socio, nombre_actividad, fecha_asistencia, asistencia, profesor)
+        SELECT 
+            RTRIM(LTRIM([Nro de Socio])), 
+            RTRIM(LTRIM([Actividad])), 
+            TRY_CONVERT(DATE, [fecha de asistencia], 0),  -- Convertir acá
+            LEFT(RTRIM(LTRIM([Asistencia])), 1),
+            RTRIM(LTRIM([Profesor]))
+        FROM OPENROWSET(
+            ''Microsoft.ACE.OLEDB.12.0'', 
+            ''Excel 12.0;Database=' + @ruta + ';HDR=YES;'',
+            ''SELECT [Nro de Socio], [Actividad], [fecha de asistencia], [Asistencia], [Profesor] 
+              FROM [presentismo_actividades$]''
+        )
+        WHERE [Nro de Socio] IS NOT NULL 
+          AND RTRIM(LTRIM([Nro de Socio])) <> ''''
+          AND [Nro de Socio] LIKE ''SN-%''
+          AND TRY_CONVERT(DATE, [fecha de asistencia], 0) IS NOT NULL  -- Sólo filas con fecha válida
+    ';
+
+    EXEC sp_executesql @sql;
+END;
+GO
+
+exec actividad.importar_presentismo_excel @ruta='C:\Importar\Datos socios.xlsx';
+select* from ##PresentismoExcel ORDER BY fecha_asistencia where nro_socio='SN-4148'
+
+CREATE OR ALTER PROCEDURE actividad.procesar_presentismo_excel
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE 
+        @nro_socio VARCHAR(50),
+        @nombre_actividad VARCHAR(100),
+        @fecha_asistencia DATE,
+        @asistencia CHAR(1),
+        @profesor VARCHAR(100);
+
+    DECLARE cur CURSOR FOR
+        SELECT nro_socio, nombre_actividad, fecha_asistencia, asistencia, profesor
+        FROM ##PresentismoExcel;
+
+    OPEN cur;
+    FETCH NEXT FROM cur INTO @nro_socio, @nombre_actividad, @fecha_asistencia, @asistencia, @profesor;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        -- Ya no hay que convertir la fecha, porque está en DATE
+
+        EXEC actividad.insertar_presentismo
+            @nro_socio = @nro_socio,
+            @nombre_actividad = @nombre_actividad,
+            @fecha_asistencia = @fecha_asistencia,
+            @asistencia = @asistencia,
+            @profesor = @profesor;
+
+        FETCH NEXT FROM cur INTO @nro_socio, @nombre_actividad, @fecha_asistencia, @asistencia, @profesor;
+    END
+
+    CLOSE cur;
+    DEALLOCATE cur;
+END;
+GO
+
+
+exec  actividad.procesar_presentismo_excel
+
+select* from actividad.presentismo
+delete actividad.presentismo
+select* from actividad.actividad
+select* from actividad.presentismo order by id_actividad
+
+SELECT DISTINCT a.nombre
+FROM actividad.presentismo p
+JOIN actividad.actividad a ON p.id_actividad = a.id_actividad
+WHERE p.asistencia = 'P';
+
+
+
+SELECT s.nro_socio
+FROM socio.socio s
+LEFT JOIN ##PresentismoExcel p ON s.nro_socio = p.nro_socio
+WHERE p.nro_socio IS NULL;
+
+SELECT p.nro_socio
+FROM ##PresentismoExcel p
+LEFT JOIN socio.socio s ON p.nro_socio = s.nro_socio
+WHERE s.nro_socio IS NULL;

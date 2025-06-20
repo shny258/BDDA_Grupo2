@@ -177,3 +177,20 @@ CREATE TABLE factura.pago (
     tipo_pago VARCHAR(20) -- Ej: "Pago completo", "Reembolso", "Pago a cuenta"
 
 );
+CREATE TABLE actividad.presentismo (
+    id_socio INT NOT NULL,
+    id_actividad INT NOT NULL,
+    fecha_asistencia DATE NOT NULL,
+    asistencia CHAR(1) NOT NULL,  -- 'P' o 'A'
+    profesor VARCHAR(100) NULL,
+    -- PK compuesta
+    CONSTRAINT PK_presentismo PRIMARY KEY (id_socio, id_actividad, fecha_asistencia),
+    -- FK a socio.socio(id_socio)
+    CONSTRAINT FK_presentismo_socio FOREIGN KEY (id_socio)
+        REFERENCES socio.socio(id_socio),
+    -- FK a actividad.actividad(id_actividad)
+    CONSTRAINT FK_presentismo_actividad FOREIGN KEY (id_actividad)
+        REFERENCES actividad.actividad(id_actividad)
+);
+
+select* from actividad.presentismo
