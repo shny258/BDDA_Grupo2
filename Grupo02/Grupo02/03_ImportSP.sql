@@ -8,54 +8,6 @@ RECONFIGURE;
 EXEC sp_configure 'Ad Hoc Distributed Queries', 1;
 RECONFIGURE;
 GO
---=================================================================
---PROCEDURES PARA iMPORTAR LOS DATOS
---=================================================================
-
---=================================================================
---Importar tabla de PRESENTISMO_ACTIVIDADES
---=================================================================
-CREATE OR ALTER PROCEDURE actividad.importar_presentismo_excel
-    @ruta NVARCHAR(500)
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    IF OBJECT_ID('tempdb..##PresentismoExcel') IS NOT NULL
-        DROP TABLE ##PresentismoExcel;
-
-    CREATE TABLE ##PresentismoExcel (
-        nro_socio VARCHAR(50),
-        nombre_actividad VARCHAR(100),
-        fecha_asistencia DATE,  -- Cambié a DATE
-        asistencia CHAR(1),
-        profesor VARCHAR(100)
-    );
-
-    DECLARE @sql NVARCHAR(MAX);
-    SET @sql = N'
-        INSERT INTO ##PresentismoExcel (nro_socio, nombre_actividad, fecha_asistencia, asistencia, profesor)
-        SELECT 
-            RTRIM(LTRIM([Nro de Socio])), 
-            RTRIM(LTRIM([Actividad])), 
-            TRY_CONVERT(DATE, [fecha de asistencia], 0),  -- Convertir acá
-            LEFT(RTRIM(LTRIM([Asistencia])), 1),
-            RTRIM(LTRIM([Profesor]))
-        FROM OPENROWSET(
-            ''Microsoft.ACE.OLEDB.12.0'', 
-            ''Excel 12.0;Database=' + @ruta + ';HDR=YES;'',
-            ''SELECT [Nro de Socio], [Actividad], [fecha de asistencia], [Asistencia], [Profesor] 
-              FROM [presentismo_actividades$]''
-        )
-        WHERE [Nro de Socio] IS NOT NULL 
-          AND RTRIM(LTRIM([Nro de Socio])) <> ''''
-          AND [Nro de Socio] LIKE ''SN-%''
-          AND TRY_CONVERT(DATE, [fecha de asistencia], 0) IS NOT NULL  -- Sólo filas con fecha válida
-    ';
-
-    EXEC sp_executesql @sql;
-END;
-GO
 
 --=================================================================
 --Importar tabla de OPEN_METEO_BUENOS_AIRES
@@ -179,6 +131,64 @@ END;
 GO
 
 --=================================================================
+--CARGAR DATOS DE SOCIOS_TEMP A SOCIOS.SOCIOS
+--=================================================================
+	CREATE OR ALTER PROCEDURE socio.procesar_socios_temp
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE 
+        @nro_socio VARCHAR(10),
+        @dni VARCHAR(15),
+        @nombre VARCHAR(50),
+        @apellido VARCHAR(50),
+        @email VARCHAR(100),
+        @fecha_nacimiento DATE,
+        @telefono_contacto VARCHAR(20),
+        @telefono_emergencia VARCHAR(20),
+        @cobertura_medica VARCHAR(100),
+        @nro_cobertura_medica VARCHAR(50),
+        @id_medio_de_pago INT = 1,
+        @id_grupo_familiar INT = NULL,
+		@nro_socio_rp varchar(10);
+
+    DECLARE cur CURSOR FOR 
+        SELECT nro_socio, dni, nombre, apellido, email, fecha_nacimiento, 
+               telefono_contacto, telefono_emergencia, cobertura_medica, nro_cobertura_medica,nro_socio_rp
+        FROM socio.socio_temp;
+
+    OPEN cur;
+    FETCH NEXT FROM cur INTO @nro_socio, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
+                             @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica,@nro_socio_rp;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        EXEC socio.insertar_socio
+            @nro_socio = @nro_socio,
+            @dni = @dni,
+            @nombre = @nombre,
+            @apellido = @apellido,
+            @email = @email,
+            @fecha_nacimiento = @fecha_nacimiento,
+            @telefono_contacto = @telefono_contacto,
+            @telefono_emergencia = @telefono_emergencia,
+            @cobertura_medica = @cobertura_medica,
+            @nro_cobertura_medica = @nro_cobertura_medica,
+            @id_medio_de_pago = 1,
+          @id_grupo_familiar = @id_grupo_familiar,
+			@nro_socio_rp = @nro_socio_rp;
+
+        FETCH NEXT FROM cur INTO @nro_socio, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
+                                 @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica,@nro_socio_rp;
+    END
+
+    CLOSE cur;
+    DEALLOCATE cur;
+END;
+GO
+
+--=================================================================
 --Importar tabla de GRUPO FAMILIAR
 --=================================================================
 CREATE OR ALTER PROCEDURE socio.importar_socios_excel2
@@ -240,143 +250,6 @@ LTRIM(RTRIM(CAST(CAST([ DNI] AS BIGINT) AS VARCHAR(20)))) AS dni,
     ';
 
     EXEC sp_executesql @sql;
-END;
-GO
-
---=================================================================
---Importar tabla de PAGOS CUOTAS
---=================================================================
-CREATE OR ALTER PROCEDURE factura.importar_excel_a_temporal
-    @ruta NVARCHAR(255)
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    IF OBJECT_ID('tempdb..##PagoExcel') IS NOT NULL
-        DROP TABLE ##PagoExcel;
-
-   CREATE TABLE ##PagoExcel (
-    id_pago_excel BIGINT,
-    fecha_pago date,   -- leer como texto
-    responsable_pago NVARCHAR(100),
-    monto NUMERIC(15,2),
-    medio_de_pago NVARCHAR(50)
-);
-
-    DECLARE @sql NVARCHAR(MAX);
-    SET @sql = '
-    INSERT INTO ##PagoExcel
-    SELECT [Id de pago], [fecha], [Responsable de pago], [Valor], [Medio de pago]
-    FROM OPENROWSET(
-        ''Microsoft.ACE.OLEDB.12.0'',
-        ''Excel 12.0;Database=' + @ruta + ';HDR=YES'',
-        ''SELECT * FROM [pago cuotas$]''
-    )';
-
-    EXEC sp_executesql @sql;
-END;
-GO
-
---=================================================================
---PROCEDURES PARA PROCESAR LOS DATOS
---=================================================================
-
---=================================================================
---PROCESAR ##PRESENTISMO PARA CARGAR ACTIVIDAD.PRESENTISMO
---=================================================================
-CREATE OR ALTER PROCEDURE actividad.procesar_presentismo_excel
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE 
-        @nro_socio VARCHAR(50),
-        @nombre_actividad VARCHAR(100),
-        @fecha_asistencia DATE,
-        @asistencia CHAR(1),
-        @profesor VARCHAR(100);
-
-    DECLARE cur CURSOR FOR
-        SELECT nro_socio, nombre_actividad, fecha_asistencia, asistencia, profesor
-        FROM ##PresentismoExcel;
-
-    OPEN cur;
-    FETCH NEXT FROM cur INTO @nro_socio, @nombre_actividad, @fecha_asistencia, @asistencia, @profesor;
-
-    WHILE @@FETCH_STATUS = 0
-    BEGIN
-        -- Ya no hay que convertir la fecha, porque está en DATE
-
-        EXEC actividad.insertar_presentismo
-            @nro_socio = @nro_socio,
-            @nombre_actividad = @nombre_actividad,
-            @fecha_asistencia = @fecha_asistencia,
-            @asistencia = @asistencia,
-            @profesor = @profesor;
-
-        FETCH NEXT FROM cur INTO @nro_socio, @nombre_actividad, @fecha_asistencia, @asistencia, @profesor;
-    END
-
-    CLOSE cur;
-    DEALLOCATE cur;
-END;
-GO
-
---=================================================================
---CARGAR DATOS DE SOCIOS_TEMP A SOCIOS.SOCIOS
---=================================================================
-CREATE OR ALTER PROCEDURE socio.procesar_socios_temp
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE 
-        @nro_socio VARCHAR(10),
-        @dni VARCHAR(15),
-        @nombre VARCHAR(50),
-        @apellido VARCHAR(50),
-        @email VARCHAR(100),
-        @fecha_nacimiento DATE,
-        @telefono_contacto VARCHAR(20),
-        @telefono_emergencia VARCHAR(20),
-        @cobertura_medica VARCHAR(100),
-        @nro_cobertura_medica VARCHAR(50),
-        @id_medio_de_pago INT = 1,
-        @id_grupo_familiar INT = NULL,
-		@nro_socio_rp varchar(10);
-
-    DECLARE cur CURSOR FOR 
-        SELECT nro_socio, dni, nombre, apellido, email, fecha_nacimiento, 
-               telefono_contacto, telefono_emergencia, cobertura_medica, nro_cobertura_medica,nro_socio_rp
-        FROM socio.socio_temp;
-
-    OPEN cur;
-    FETCH NEXT FROM cur INTO @nro_socio, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
-                             @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica,@nro_socio_rp;
-
-    WHILE @@FETCH_STATUS = 0
-    BEGIN
-        EXEC socio.insertar_socio
-            @nro_socio = @nro_socio,
-            @dni = @dni,
-            @nombre = @nombre,
-            @apellido = @apellido,
-            @email = @email,
-            @fecha_nacimiento = @fecha_nacimiento,
-            @telefono_contacto = @telefono_contacto,
-            @telefono_emergencia = @telefono_emergencia,
-            @cobertura_medica = @cobertura_medica,
-            @nro_cobertura_medica = @nro_cobertura_medica,
-            @id_medio_de_pago = 1,
-          @id_grupo_familiar = @id_grupo_familiar,
-			@nro_socio_rp = @nro_socio_rp;
-
-        FETCH NEXT FROM cur INTO @nro_socio, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
-                                 @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica,@nro_socio_rp;
-    END
-
-    CLOSE cur;
-    DEALLOCATE cur;
 END;
 GO
 
@@ -544,6 +417,40 @@ END;
 GO
 
 --=================================================================
+--Importar tabla de PAGOS CUOTAS
+--=================================================================
+CREATE OR ALTER PROCEDURE factura.importar_excel_a_temporal
+    @ruta NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF OBJECT_ID('tempdb..##PagoExcel') IS NOT NULL
+        DROP TABLE ##PagoExcel;
+
+   CREATE TABLE ##PagoExcel (
+    id_pago_excel BIGINT,
+    fecha_pago date,   -- leer como texto
+    responsable_pago NVARCHAR(100),
+    monto NUMERIC(15,2),
+    medio_de_pago NVARCHAR(50)
+);
+
+    DECLARE @sql NVARCHAR(MAX);
+    SET @sql = '
+    INSERT INTO ##PagoExcel
+    SELECT [Id de pago], [fecha], [Responsable de pago], [Valor], [Medio de pago]
+    FROM OPENROWSET(
+        ''Microsoft.ACE.OLEDB.12.0'',
+        ''Excel 12.0;Database=' + @ruta + ';HDR=YES'',
+        ''SELECT * FROM [pago cuotas$]''
+    )';
+
+    EXEC sp_executesql @sql;
+END;
+GO
+
+--=================================================================
 --PROCESAR PAGOS PARA CARGAR FACTURA.PAGO
 --=================================================================
 CREATE OR ALTER PROCEDURE factura.procesar_pagos_temporales
@@ -622,5 +529,230 @@ BEGIN
 
     CLOSE pagos_cursor;
     DEALLOCATE pagos_cursor;
+END;
+GO
+
+--=================================================================
+--IMPORTAR Y INSERTAR A ACTIVIDAD.ACTIVIDAD 
+--=================================================================
+CREATE OR ALTER PROCEDURE actividad.importar_actividades_regulares
+    @path VARCHAR(255)
+AS
+BEGIN
+    DECLARE @sql NVARCHAR(MAX);
+    SET @sql = '
+        SELECT * INTO #tarifa_mensual
+        FROM OPENROWSET(
+            ''Microsoft.ACE.OLEDB.12.0'',
+            ''Excel 12.0;Database=' + @path + ';HDR=YES;'',
+            ''SELECT * FROM [Tarifas$B2:D8]''
+        );
+
+        DECLARE @nombre VARCHAR(50), @costo NUMERIC(15,2), @fecha_vigente DATE;
+        DECLARE actividades_cursor CURSOR FOR
+        SELECT [Actividad], TRY_CAST([Valor por mes] AS NUMERIC(15,2)),[Vigente hasta]
+        FROM #tarifa_mensual;
+
+        OPEN actividades_cursor;
+        FETCH NEXT FROM actividades_cursor INTO @nombre, @costo,@fecha_vigente;
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            EXEC actividad.insertar_actividad @nombre, @costo,@fecha_vigente;
+            FETCH NEXT FROM actividades_cursor INTO @nombre, @costo,@fecha_vigente;
+        END
+        CLOSE actividades_cursor;
+        DEALLOCATE actividades_cursor;
+
+        DROP TABLE #tarifa_mensual;
+    ';
+    EXEC sp_executesql @sql;
+END;
+GO
+
+--=================================================================
+--IMPORTAR Y INSERTAR A SOCIO.CATEGORIA_SOCIO 
+--=================================================================
+CREATE OR ALTER PROCEDURE socio.importar_categorias_socio
+    @path VARCHAR(255)
+AS
+BEGIN
+    DECLARE @sql NVARCHAR(MAX);
+    SET @sql = '
+        -- Cargar los datos desde el Excel al rango correcto
+        SELECT * INTO #categorias_socio
+        FROM OPENROWSET(
+            ''Microsoft.ACE.OLEDB.12.0'',
+            ''Excel 12.0;Database=' + @path + ';HDR=YES;'',
+            ''SELECT [Categoria socio], [Valor cuota], [Vigente hasta] FROM [Tarifas$B10:D13]''
+        );
+
+        DECLARE @nombre VARCHAR(50), @costo INT, @fecha_vigencia DATE;
+
+        DECLARE cat_cursor CURSOR FOR
+        SELECT 
+            [Categoria socio], 
+            TRY_CAST([Valor cuota] AS INT), 
+            TRY_CAST([Vigente hasta] AS DATE)
+        FROM #categorias_socio;
+
+        OPEN cat_cursor;
+        FETCH NEXT FROM cat_cursor INTO @nombre, @costo, @fecha_vigencia;
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            EXEC socio.insertar_categoria_socio @nombre, @costo, @fecha_vigencia;
+            FETCH NEXT FROM cat_cursor INTO @nombre, @costo, @fecha_vigencia;
+        END
+        CLOSE cat_cursor;
+        DEALLOCATE cat_cursor;
+
+        DROP TABLE #categorias_socio;
+    ';
+    EXEC sp_executesql @sql;
+END;
+GO
+
+--=================================================================
+--IMPORTAR Y INSERTAR A ACTIVIDAD.ACTIVIDAD_EXTRA 
+--=================================================================
+CREATE OR ALTER PROCEDURE actividad.importar_tarifas_pileta
+    @path_archivo VARCHAR(255)
+AS
+BEGIN
+    DECLARE @sql NVARCHAR(MAX);
+    SET @sql = '
+        -- Cargar los datos desde el archivo Excel al rango correcto
+        SELECT * INTO #tarifa_pileta
+        FROM OPENROWSET(
+            ''Microsoft.ACE.OLEDB.12.0'',
+            ''Excel 12.0;Database=' + @path_archivo + ';HDR=YES;'',
+            ''SELECT * FROM [Tarifas$B16:F22]''
+        );
+
+        DECLARE @f1 VARCHAR(50), @tipo_tarifa_actual VARCHAR(50), @categoria VARCHAR(50);
+        DECLARE @valor_socios NUMERIC(15,2), @valor_invitados NUMERIC(15,2);
+        DECLARE @vigente_hasta DATE;
+        DECLARE @nombre_completo VARCHAR(100);
+
+        -- Leer las filas del Excel
+        DECLARE c_tarifas CURSOR FOR
+        SELECT 
+            F1, 
+            F2, 
+            TRY_CAST(Socios AS NUMERIC(15,2)), 
+            TRY_CAST(Invitados AS NUMERIC(15,2)), 
+            TRY_CAST([Vigente hasta] AS DATE)
+        FROM #tarifa_pileta;
+
+        OPEN c_tarifas;
+        FETCH NEXT FROM c_tarifas INTO @f1, @categoria, @valor_socios, @valor_invitados, @vigente_hasta;
+
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            IF @f1 IS NOT NULL
+                SET @tipo_tarifa_actual = @f1;
+
+            SET @nombre_completo = ''Pileta - '' + @tipo_tarifa_actual + '' - '' + @categoria;
+
+            EXEC actividad.insertar_actividad_extra 
+                @nombre = @nombre_completo, 
+                @costo_socio = @valor_socios, 
+                @costo_invitado = @valor_invitados, 
+                @fecha_vigencia = @vigente_hasta;
+
+            FETCH NEXT FROM c_tarifas INTO @f1, @categoria, @valor_socios, @valor_invitados, @vigente_hasta;
+        END
+
+        CLOSE c_tarifas;
+        DEALLOCATE c_tarifas;
+
+        DROP TABLE #tarifa_pileta;
+    ';
+    EXEC sp_executesql @sql;
+END;
+GO
+
+---========================================
+--IMPORTAR PRESENTISMO EXCEL
+---=========================================
+CREATE OR ALTER PROCEDURE actividad.importar_presentismo_excel
+    @ruta NVARCHAR(500)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF OBJECT_ID('tempdb..##PresentismoExcel') IS NOT NULL
+        DROP TABLE ##PresentismoExcel;
+
+    CREATE TABLE ##PresentismoExcel (
+        nro_socio VARCHAR(50),
+        nombre_actividad VARCHAR(100),
+        fecha_asistencia DATE,  -- Cambié a DATE
+        asistencia CHAR(1),
+        profesor VARCHAR(100)
+    );
+
+    DECLARE @sql NVARCHAR(MAX);
+    SET @sql = N'
+        INSERT INTO ##PresentismoExcel (nro_socio, nombre_actividad, fecha_asistencia, asistencia, profesor)
+        SELECT 
+            RTRIM(LTRIM([Nro de Socio])), 
+            RTRIM(LTRIM([Actividad])), 
+            TRY_CONVERT(DATE, [fecha de asistencia], 0),  -- Convertir acá
+            LEFT(RTRIM(LTRIM([Asistencia])), 1),
+            RTRIM(LTRIM([Profesor]))
+        FROM OPENROWSET(
+            ''Microsoft.ACE.OLEDB.12.0'', 
+            ''Excel 12.0;Database=' + @ruta + ';HDR=YES;'',
+            ''SELECT [Nro de Socio], [Actividad], [fecha de asistencia], [Asistencia], [Profesor] 
+              FROM [presentismo_actividades$]''
+        )
+        WHERE [Nro de Socio] IS NOT NULL 
+          AND RTRIM(LTRIM([Nro de Socio])) <> ''''
+          AND [Nro de Socio] LIKE ''SN-%''
+          AND TRY_CONVERT(DATE, [fecha de asistencia], 0) IS NOT NULL  -- Sólo filas con fecha válida
+    ';
+
+    EXEC sp_executesql @sql;
+END;
+GO
+
+---========================================
+---INSERTAR EN TABLA PRESENTISMO
+---=========================================
+CREATE OR ALTER PROCEDURE actividad.procesar_presentismo_excel
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE 
+        @nro_socio VARCHAR(50),
+        @nombre_actividad VARCHAR(100),
+        @fecha_asistencia DATE,
+        @asistencia CHAR(1),
+        @profesor VARCHAR(100);
+
+    DECLARE cur CURSOR FOR
+        SELECT nro_socio, nombre_actividad, fecha_asistencia, asistencia, profesor
+        FROM ##PresentismoExcel;
+
+    OPEN cur;
+    FETCH NEXT FROM cur INTO @nro_socio, @nombre_actividad, @fecha_asistencia, @asistencia, @profesor;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        -- Ya no hay que convertir la fecha, porque está en DATE
+
+        EXEC actividad.insertar_presentismo
+            @nro_socio = @nro_socio,
+            @nombre_actividad = @nombre_actividad,
+            @fecha_asistencia = @fecha_asistencia,
+            @asistencia = @asistencia,
+            @profesor = @profesor;
+
+        FETCH NEXT FROM cur INTO @nro_socio, @nombre_actividad, @fecha_asistencia, @asistencia, @profesor;
+    END
+
+    CLOSE cur;
+    DEALLOCATE cur;
 END;
 GO
