@@ -193,3 +193,13 @@ CREATE TABLE actividad.presentismo (
     CONSTRAINT FK_presentismo_actividad FOREIGN KEY (id_actividad)
         REFERENCES actividad.actividad(id_actividad)
 );
+CREATE TABLE socio.empleado (
+    id_empleado INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARBINARY(MAX) NOT NULL,             -- campo encriptado
+    apellido VARBINARY(MAX) NOT NULL,           -- campo encriptado
+    dni VARBINARY(MAX) NOT NULL,                -- campo encriptado
+    telefono VARBINARY(MAX) NULL,               -- campo encriptado
+    area VARCHAR(50) NOT NULL,
+    rol VARCHAR(50) NOT NULL,
+    fecha_alta DATE NOT NULL DEFAULT GETDATE()
+);
