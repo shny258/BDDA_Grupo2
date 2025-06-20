@@ -15,33 +15,43 @@ GO
 --=================================================================
 --Importar tabla de PRESENTISMO_ACTIVIDADES
 --=================================================================
-CREATE OR ALTER PROCEDURE actividad.importar_excel_Presentismo
-    @ruta NVARCHAR(255)
+CREATE OR ALTER PROCEDURE actividad.importar_presentismo_excel
+    @ruta NVARCHAR(500)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF OBJECT_ID('actividad.presentismo','U') IS NOT NULL
-        DROP TABLE actividad.presentismo;
+    IF OBJECT_ID('tempdb..##PresentismoExcel') IS NOT NULL
+        DROP TABLE ##PresentismoExcel;
 
-   CREATE TABLE actividad.presentismo (
-	id_presentismo int identity(1,1) primary key,
-    nro_socio varchar(20),
-    activudad varchar(50), 
-    fecha_asistencia date,
-    asistencia varchar(1),
-	profesor varchar(50)
-);
+    CREATE TABLE ##PresentismoExcel (
+        nro_socio VARCHAR(50),
+        nombre_actividad VARCHAR(100),
+        fecha_asistencia DATE,  -- Cambié a DATE
+        asistencia CHAR(1),
+        profesor VARCHAR(100)
+    );
 
     DECLARE @sql NVARCHAR(MAX);
-    SET @sql = '
-    INSERT INTO actividad.presentismo
-    SELECT [Nro de Socio], [Actividad], [fecha de asistencia], [Asistencia], [Profesor]
-    FROM OPENROWSET(
-        ''Microsoft.ACE.OLEDB.12.0'',
-        ''Excel 12.0;Database=' + @ruta + ';HDR=YES;IMEX=1'',
-        ''SELECT * FROM [presentismo_actividades$]''
-    )';
+    SET @sql = N'
+        INSERT INTO ##PresentismoExcel (nro_socio, nombre_actividad, fecha_asistencia, asistencia, profesor)
+        SELECT 
+            RTRIM(LTRIM([Nro de Socio])), 
+            RTRIM(LTRIM([Actividad])), 
+            TRY_CONVERT(DATE, [fecha de asistencia], 0),  -- Convertir acá
+            LEFT(RTRIM(LTRIM([Asistencia])), 1),
+            RTRIM(LTRIM([Profesor]))
+        FROM OPENROWSET(
+            ''Microsoft.ACE.OLEDB.12.0'', 
+            ''Excel 12.0;Database=' + @ruta + ';HDR=YES;'',
+            ''SELECT [Nro de Socio], [Actividad], [fecha de asistencia], [Asistencia], [Profesor] 
+              FROM [presentismo_actividades$]''
+        )
+        WHERE [Nro de Socio] IS NOT NULL 
+          AND RTRIM(LTRIM([Nro de Socio])) <> ''''
+          AND [Nro de Socio] LIKE ''SN-%''
+          AND TRY_CONVERT(DATE, [fecha de asistencia], 0) IS NOT NULL  -- Sólo filas con fecha válida
+    ';
 
     EXEC sp_executesql @sql;
 END;
@@ -270,6 +280,47 @@ GO
 --=================================================================
 --PROCEDURES PARA PROCESAR LOS DATOS
 --=================================================================
+
+--=================================================================
+--PROCESAR ##PRESENTISMO PARA CARGAR ACTIVIDAD.PRESENTISMO
+--=================================================================
+CREATE OR ALTER PROCEDURE actividad.procesar_presentismo_excel
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE 
+        @nro_socio VARCHAR(50),
+        @nombre_actividad VARCHAR(100),
+        @fecha_asistencia DATE,
+        @asistencia CHAR(1),
+        @profesor VARCHAR(100);
+
+    DECLARE cur CURSOR FOR
+        SELECT nro_socio, nombre_actividad, fecha_asistencia, asistencia, profesor
+        FROM ##PresentismoExcel;
+
+    OPEN cur;
+    FETCH NEXT FROM cur INTO @nro_socio, @nombre_actividad, @fecha_asistencia, @asistencia, @profesor;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        -- Ya no hay que convertir la fecha, porque está en DATE
+
+        EXEC actividad.insertar_presentismo
+            @nro_socio = @nro_socio,
+            @nombre_actividad = @nombre_actividad,
+            @fecha_asistencia = @fecha_asistencia,
+            @asistencia = @asistencia,
+            @profesor = @profesor;
+
+        FETCH NEXT FROM cur INTO @nro_socio, @nombre_actividad, @fecha_asistencia, @asistencia, @profesor;
+    END
+
+    CLOSE cur;
+    DEALLOCATE cur;
+END;
+GO
 
 --=================================================================
 --CARGAR DATOS DE SOCIOS_TEMP A SOCIOS.SOCIOS
