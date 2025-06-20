@@ -849,3 +849,4 @@ BEGIN
  
     PRINT 'Facturas generadas para socios del rango SN-4001 a SN-4120.';
 END;
+

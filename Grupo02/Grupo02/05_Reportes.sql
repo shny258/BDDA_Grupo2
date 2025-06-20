@@ -31,5 +31,7 @@ ORDER BY total_incumplimientos DESC;
 -- REPORTE DE INGRESOS DE ACTIVIDADES (DESDE ENERO)
 -----------------------------------------------------------------------------
 
-
 DELETE factura.pago
+DELETE factura.factura_mensual
+
+select * from factura.factura_mensual

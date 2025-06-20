@@ -134,6 +134,7 @@ CREATE TABLE factura.factura_mensual (
     id_factura INT IDENTITY(1,1) PRIMARY KEY,
     fecha_emision DATE,
     fecha_vencimiento DATE,
+	segunda_fecha_vencimiento DATE,
     estado VARCHAR(20) DEFAULT 'Pendiente', -- Pagada / Pendiente / Anulada
     total NUMERIC(15,2),
     nro_socio VARCHAR(10),
