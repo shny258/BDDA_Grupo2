@@ -16,13 +16,13 @@ GO
 --=================================================================
 --Importar tabla de OPEN_METEO_BUENOS_AIRES
 --=================================================================
-EXEC factura.importar_clima_csv @path = 'C:\Users\lucia\Desktop\archivos\open-meteo-buenosaires_2025.csv'
+EXEC factura.importar_clima_csv @path = 'C:\Importar\open-meteo-buenosaires_2025.csv'
 --select * from factura.clima_anual;
 
 --=================================================================
 --Importar tabla de RESPONDABLES DE PAGO
 --=================================================================
-EXEC socio.importar_socios_excel @ruta = 'C:\Users\lucia\Desktop\archivos\Datos socios.xlsx';
+EXEC socio.importar_socios_excel @ruta = 'C:\Importar\Datos socios.xlsx';
 --	select * from socio.socio_temp
 
 --=================================================================
@@ -41,7 +41,7 @@ EXEC socio.procesar_socios_temp;
 --=================================================================
 --Importar tabla de GRUPO FAMILIAR
 --=================================================================
-EXEC socio.importar_socios_excel2 @ruta = 'C:\Users\lucia\Desktop\archivos\Datos socios.xlsx';
+EXEC socio.importar_socios_excel2 @ruta = 'C:\Importar\Datos socios.xlsx';
 --select * from socio.socio_temp2
 
 --=================================================================
@@ -64,7 +64,7 @@ delete factura.factura_mensual
 --=================================================================
 --IMPORTAR DE TARIFA E INSERTAR A ACTIVIDAD.ACTIVIDAD 
 --=================================================================
-EXEC actividad.importar_actividades_regulares @path = 'C:\Users\lucia\Desktop\archivos\Datos socios.xlsx';
+EXEC actividad.importar_actividades_regulares @path = 'C:\Importar\Datos socios.xlsx';
 
 /*
 Ejecutar en caso de que sea necesario modificar la actividad de ajedrez
@@ -90,13 +90,13 @@ select * from actividad.actividad
 --=================================================================
 --IMPORTAR TARIFA E INSERTAR A ACTIVIDAD.ACTIVIDAD_EXTRA (Pileta)
 --=================================================================
-EXEC actividad.importar_tarifas_pileta @path_archivo = 'C:\Users\lucia\Desktop\archivos\Datos socios.xlsx';
+EXEC actividad.importar_tarifas_pileta @path_archivo = 'C:\Importar\Datos socios.xlsx';
 --select * from actividad.actividad_extra
 
 ---========================================
 --IMPORTAR PRESENTISMO EXCEL
 ---=========================================
-EXEC actividad.importar_presentismo_excel @ruta='C:\Users\lucia\Desktop\archivos\Datos socios.xlsx';
+EXEC actividad.importar_presentismo_excel @ruta='C:\Importar\Datos socios.xlsx';
 --select* from ##PresentismoExcel
 
 ---========================================
