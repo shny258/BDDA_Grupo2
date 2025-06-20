@@ -96,7 +96,7 @@ EXEC socio.importar_socios_excel @ruta = '[PATH]\Datos socios.xlsx';
 --=================================================================
 --IMPORTAR Y INSERTAR A SOCIO.CATEGORIA_SOCIO 
 --=================================================================
-EXEC socio.importar_categorias_socio @path = '[PATH]\Datos socios.xlsx';
+EXEC socio.importar_categorias_socio @path = 'C:\Importar\Datos socios.xlsx';
 --select * from socio.categoria_socio
 
 --=================================================================
@@ -122,9 +122,12 @@ EXEC factura.generar_facturas_mensuales @anio = 2024; --Generar Facturas?
 --=================================================================
 --Importar E INSERTAR tabla de PAGOS CUOTAS
 --=================================================================
-EXEC factura.importar_excel_a_temporal @ruta = '[PATH]\Datos socios.xlsx';
+EXEC factura.importar_excel_a_temporal @ruta = 'C:\Importar\Datos socios.xlsx';
 EXEC factura.procesar_pagos_temporales;
 --select * from factura.pago
+select * from factura.factura_mensual
+delete factura.pago
+delete factura.factura_mensual
 
 --=================================================================
 --IMPORTAR DE TARIFA E INSERTAR A ACTIVIDAD.ACTIVIDAD 

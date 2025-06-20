@@ -14,7 +14,7 @@
 -- REPORTE DE LOS SOCIOS MOROSOS (2024)
 -----------------------------------------------------------------------------
 
-DECLARE @fecha_inicio DATE = '2024-01-01';
+/*DECLARE @fecha_inicio DATE = '2024-01-01';
 DECLARE @fecha_fin DATE = '2024-12-31';
 
 WITH Morosidades AS (
@@ -25,7 +25,7 @@ WITH Morosidades AS (
         COUNT(*) OVER (PARTITION BY s.nro_socio) AS total_incumplimientos
     FROM factura.factura_mensual fm
     INNER JOIN socio.socio s ON s.nro_socio = fm.nro_socio
-    WHERE fm.estado = 'Pendiente'
+    WHERE fm.estado = 'Pago completado'
       AND fm.fecha_vencimiento BETWEEN @fecha_inicio AND @fecha_fin
 )
 SELECT DISTINCT
@@ -35,7 +35,55 @@ SELECT DISTINCT
     total_incumplimientos
 FROM Morosidades
 WHERE total_incumplimientos > 2
-ORDER BY total_incumplimientos DESC;
+ORDER BY total_incumplimientos DESC;*/
+DECLARE @Desde DATE = '2024-01-01';
+DECLARE @Hasta DATE = '2024-12-31';
+
+WITH Moras_CTE AS (
+    SELECT
+        f.nro_socio,
+        s.nombre,
+        s.apellido,
+        f.fecha_emision,
+        f.fecha_vencimiento,
+        p.fecha_pago,
+        CASE WHEN p.fecha_pago > f.fecha_vencimiento THEN 1 ELSE 0 END AS es_moroso
+    FROM factura.factura_mensual f
+    INNER JOIN socio.socio s 
+        ON s.nro_socio = f.nro_socio
+    LEFT JOIN factura.pago p 
+        ON p.id_factura = f.id_factura
+    WHERE f.fecha_emision BETWEEN @Desde AND @Hasta
+)
+, Conteo_Moras AS (
+    SELECT
+        nro_socio,
+        nombre,
+        apellido,
+        fecha_emision AS mes_incumplido,
+        es_moroso,
+        SUM(es_moroso) OVER(PARTITION BY nro_socio) AS cantidad_total_moras
+    FROM Moras_CTE
+)
+, Ranking_Moras AS (
+    SELECT
+        nro_socio,
+        nombre + ' ' + apellido AS nombre_apellido,
+        mes_incumplido,
+        cantidad_total_moras,
+        DENSE_RANK() OVER (ORDER BY cantidad_total_moras DESC) AS ranking_morosidad
+    FROM Conteo_Moras
+    WHERE es_moroso = 1
+)
+SELECT
+    nro_socio,
+    nombre_apellido,
+    mes_incumplido,
+    ranking_morosidad,
+    cantidad_total_moras
+FROM Ranking_Moras
+WHERE cantidad_total_moras > 2
+ORDER BY ranking_morosidad, nro_socio, mes_incumplido;
 
 -----------------------------------------------------------------------------
 -- REPORTE DE SOCIOS AUSENTES EN SUS ACTIVIDADES
