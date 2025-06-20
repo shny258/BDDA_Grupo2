@@ -533,7 +533,7 @@ END;
 GO
 
 --=================================================================
---IMPORTAR Y INSERTAR A ACTIVIDAD.ACTIVIDAD 
+--IMPORTAR DE TARIFA E INSERTAR A ACTIVIDAD.ACTIVIDAD 
 --=================================================================
 CREATE OR ALTER PROCEDURE actividad.importar_actividades_regulares
     @path VARCHAR(255)
@@ -612,7 +612,7 @@ END;
 GO
 
 --=================================================================
---IMPORTAR Y INSERTAR A ACTIVIDAD.ACTIVIDAD_EXTRA 
+--IMPORTAR TARIFA E INSERTAR A ACTIVIDAD.ACTIVIDAD_EXTRA (Pileta)
 --=================================================================
 CREATE OR ALTER PROCEDURE actividad.importar_tarifas_pileta
     @path_archivo VARCHAR(255)

@@ -196,7 +196,7 @@ EXECUTE socio.procesar_socios_temp2;
 
 
 
---select* from socio.socio
+--select * from socio.socio
 =====================================================
 --DATOS SOCIOS RESPONSABLES EXP GRUPO FAMILIAR
 =====================================================
