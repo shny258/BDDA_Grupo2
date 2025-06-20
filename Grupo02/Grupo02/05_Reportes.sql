@@ -84,7 +84,30 @@ SELECT
 FROM Ranking_Moras
 WHERE cantidad_total_moras > 2
 ORDER BY ranking_morosidad, nro_socio, mes_incumplido;
+GO
+-----------------------------------------------------------------------------
+-- REPORTE DE INGRESOS DE ACTIVIDADES (DESDE ENERO)
+-----------------------------------------------------------------------------
 
+
+-----------------------------------------------------------------------------
+-- REPORTE DE SOCIOS AUSENTES EN SUS ACTIVIDADES
+-----------------------------------------------------------------------------
+SELECT 
+    cat.nombre AS Categoria,
+    act.nombre AS Actividad,
+    COUNT(*) AS cantidad_inasistencias
+FROM actividad.presentismo p
+JOIN socio.socio soc 
+    ON soc.id_socio = p.id_socio
+JOIN socio.categoria_socio cat 
+    ON soc.id_categoria = cat.nombre
+JOIN actividad.actividad act 
+    ON act.id_actividad = p.id_actividad
+WHERE p.asistencia = 'A'
+GROUP BY cat.nombre, act.nombre
+ORDER BY cantidad_inasistencias DESC;
+GO
 -----------------------------------------------------------------------------
 -- REPORTE DE SOCIOS AUSENTES EN SUS ACTIVIDADES
 -----------------------------------------------------------------------------
@@ -113,12 +136,3 @@ AND NOT EXISTS (
       AND p2.id_socio = ins.id_socio
       AND p2.asistencia = 'P'
 );
-
------------------------------------------------------------------------------
--- REPORTE DE INGRESOS DE ACTIVIDADES (DESDE ENERO)
------------------------------------------------------------------------------
-
-DELETE factura.pago
-DELETE factura.factura_mensual
-
-select * from factura.factura_mensual
