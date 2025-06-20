@@ -3,7 +3,7 @@
   <Items>
     <LogicalFolder Name="Connections" Type="2" Sorted="true">
       <Items>
-        <ConnectionNode Name="DESKTOP-GR0AA0R:DESKTOP-DGF4HRN\Niko_">
+        <ConnectionNode Name="DESKTOP-GR0AA0R:DESKTOP-GR0AA0R\facun">
           <Created>2025-06-14T16:59:07.9629249-03:00</Created>
           <Type>SQL</Type>
           <Server>DESKTOP-GR0AA0R</Server>
@@ -18,7 +18,7 @@
           <ConnectionProtocol>NotSpecified</ConnectionProtocol>
           <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
         </ConnectionNode>
-        <ConnectionNode Name="DESKTOP-MDC6S04\SQLEXPRESS:DESKTOP-DGF4HRN\Niko_">
+        <ConnectionNode Name="DESKTOP-MDC6S04\SQLEXPRESS:DESKTOP-GR0AA0R\facun">
           <Created>2025-06-19T02:38:47.9982097-03:00</Created>
           <Type>SQL</Type>
           <Server>DESKTOP-MDC6S04\SQLEXPRESS</Server>
@@ -33,7 +33,7 @@
           <ConnectionProtocol>NotSpecified</ConnectionProtocol>
           <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
         </ConnectionNode>
-        <ConnectionNode Name="localhost:DESKTOP-DGF4HRN\Niko_">
+        <ConnectionNode Name="localhost:DESKTOP-GR0AA0R\facun">
           <Created>2025-06-17T20:34:32.9532101-03:00</Created>
           <Type>SQL</Type>
           <Server>localhost</Server>
@@ -81,6 +81,12 @@
           <AssociatedConnSrvName>localhost</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>03_ImportSP.sql</FullPath>
+        </FileNode>
+        <FileNode Name="04_ExecProceduresImport.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-GR0AA0R:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-GR0AA0R</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>04_ExecProceduresImport.sql</FullPath>
         </FileNode>
         <FileNode Name="04_Import.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:localhost:True</AssociatedConnectionMoniker>

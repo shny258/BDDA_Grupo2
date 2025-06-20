@@ -1216,9 +1216,9 @@ BEGIN
     END
 
     -- Validar asistencia
-    IF @asistencia NOT IN ('P', 'A')
+    IF @asistencia NOT IN ('P', 'A', 'J')
     BEGIN
-        RAISERROR('asistencia solo puede ser P o A', 16, 1);
+        RAISERROR('asistencia solo puede ser J o P o A', 16, 1);
         RETURN;
     END
 

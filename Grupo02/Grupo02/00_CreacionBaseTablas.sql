@@ -192,5 +192,3 @@ CREATE TABLE actividad.presentismo (
     CONSTRAINT FK_presentismo_actividad FOREIGN KEY (id_actividad)
         REFERENCES actividad.actividad(id_actividad)
 );
-
-select* from actividad.presentismo

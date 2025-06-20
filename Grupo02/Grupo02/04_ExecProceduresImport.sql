@@ -25,10 +25,16 @@ EXEC socio.importar_socios_excel @ruta = '[PATH]\Datos socios.xlsx';
 --	select * from socio.socio_temp
 
 --=================================================================
+--IMPORTAR Y INSERTAR A SOCIO.CATEGORIA_SOCIO 
+--=================================================================
+EXEC socio.importar_categorias_socio @path = '[PATH]\Datos socios.xlsx';
+--select * from socio.categoria_socio
+
+--=================================================================
 --CARGAR DATOS DE SOCIOS_TEMP A SOCIOS.SOCIOS
 --=================================================================
 EXEC factura.cargar_medio_de_pago; --Cargar minimamente 3 medios de pagos
-EXEC socio.procesar_socios_temp2;
+EXEC socio.procesar_socios_temp;
 --select * from socio.socio
 
 --=================================================================
@@ -55,17 +61,20 @@ EXEC factura.procesar_pagos_temporales;
 --IMPORTAR DE TARIFA E INSERTAR A ACTIVIDAD.ACTIVIDAD 
 --=================================================================
 EXEC actividad.importar_actividades_regulares @path = '[PATH]\Datos socios.xlsx';
+
 /*
+Ejecutar en caso de que sea necesario modificar la actividad de ajedrez
+
 DECLARE @costo NUMERIC(15,2);
 DECLARE @fecha DATE;
 SELECT 
     @costo = costo_mensual,
     @fecha = fecha_vigencia
 FROM actividad.actividad
-WHERE id_actividad = 12;
+WHERE id_actividad = 6;
 
 EXEC actividad.modificar_actividad 
-    @id = 12, 
+    @id = 6, 
     @nombre = 'Ajedrez', 
     @costo_mensual = @costo, 
     @fecha_vigencia = @fecha;
@@ -73,11 +82,6 @@ EXEC actividad.modificar_actividad
 select * from actividad.actividad
 */
 
---=================================================================
---IMPORTAR Y INSERTAR A SOCIO.CATEGORIA_SOCIO 
---=================================================================
-EXEC socio.importar_categorias_socio @path = '[PATH]\Datos socios.xlsx';
---select * from socio.categoria_socio
 
 --=================================================================
 --IMPORTAR TARIFA E INSERTAR A ACTIVIDAD.ACTIVIDAD_EXTRA (Pileta)
@@ -89,30 +93,11 @@ EXEC actividad.importar_tarifas_pileta @path_archivo = '[PATH]\Datos socios.xlsx
 --IMPORTAR PRESENTISMO EXCEL
 ---=========================================
 EXEC actividad.importar_presentismo_excel @ruta='[PATH]\Datos socios.xlsx';
---select* from ##PresentismoExcel ORDER BY fecha_asistencia where nro_socio='SN-4148'
+--select* from ##PresentismoExcel
 
 ---========================================
 ---INSERTAR EN TABLA PRESENTISMO
 ---=========================================
 EXEC  actividad.procesar_presentismo_excel
-/*
-select* from actividad.presentismo
-delete actividad.presentismo
-select* from actividad.actividad
-select* from actividad.presentismo order by id_actividad
 
-SELECT DISTINCT a.nombre
-FROM actividad.presentismo p
-JOIN actividad.actividad a ON p.id_actividad = a.id_actividad
-WHERE p.asistencia = 'P';
-
-SELECT s.nro_socio
-FROM socio.socio s
-LEFT JOIN ##PresentismoExcel p ON s.nro_socio = p.nro_socio
-WHERE p.nro_socio IS NULL;
-
-SELECT p.nro_socio
-FROM ##PresentismoExcel p
-LEFT JOIN socio.socio s ON p.nro_socio = s.nro_socio
-WHERE s.nro_socio IS NULL;
-*/
+--select* from actividad.presentismo
