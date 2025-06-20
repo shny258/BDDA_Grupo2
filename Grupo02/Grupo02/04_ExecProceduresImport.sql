@@ -171,5 +171,10 @@ EXEC actividad.importar_presentismo_excel @ruta='[PATH]\Datos socios.xlsx';
 ---INSERTAR EN TABLA PRESENTISMO
 ---=========================================
 EXEC  actividad.procesar_presentismo_excel
-
 --select* from actividad.presentismo
+
+---========================================
+---INSERTAR EN TABLA INSCRIPCION_ACTIVIDAD
+---=========================================
+EXEC actividad.procesar_inscripcion_actividad
+--select * from actividad.inscripcion_actividad

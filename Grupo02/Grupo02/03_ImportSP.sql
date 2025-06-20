@@ -772,6 +772,18 @@ BEGIN
     CLOSE cur;
     DEALLOCATE cur;
 
+
+END;
+GO
+
+---========================================
+---INSERTAR EN TABLA PRESENTISMO
+---=========================================
+CREATE OR ALTER PROCEDURE actividad.procesar_inscripcion_actividad
+AS
+BEGIN
+    SET NOCOUNT ON;
+
 	DECLARE 
 		@id_socio INT,
 		@id_actividad INT,
@@ -800,10 +812,10 @@ BEGIN
 	END
 	CLOSE cur_inscrip;
 	DEALLOCATE cursor_inscripciones;
-END;
+END
 GO
 
---Cosas para que funcione el import---
+-----------------------Cosas para que funcione el import------------------------
 --Carga de medios de pago
 create or alter procedure factura.cargar_medio_de_pago
 as
