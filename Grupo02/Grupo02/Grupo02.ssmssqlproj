@@ -3,7 +3,7 @@
   <Items>
     <LogicalFolder Name="Connections" Type="2" Sorted="true">
       <Items>
-        <ConnectionNode Name="DESKTOP-GR0AA0R:DESKTOP-DGF4HRN\Niko_">
+        <ConnectionNode Name="DESKTOP-GR0AA0R:DESKTOP-MDC6S04\lucia">
           <Created>2025-06-14T16:59:07.9629249-03:00</Created>
           <Type>SQL</Type>
           <Server>DESKTOP-GR0AA0R</Server>
@@ -18,7 +18,7 @@
           <ConnectionProtocol>NotSpecified</ConnectionProtocol>
           <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
         </ConnectionNode>
-        <ConnectionNode Name="DESKTOP-MDC6S04\SQLEXPRESS:DESKTOP-DGF4HRN\Niko_">
+        <ConnectionNode Name="DESKTOP-MDC6S04\SQLEXPRESS:DESKTOP-MDC6S04\lucia">
           <Created>2025-06-19T02:38:47.9982097-03:00</Created>
           <Type>SQL</Type>
           <Server>DESKTOP-MDC6S04\SQLEXPRESS</Server>
@@ -33,7 +33,7 @@
           <ConnectionProtocol>NotSpecified</ConnectionProtocol>
           <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
         </ConnectionNode>
-        <ConnectionNode Name="localhost:DESKTOP-DGF4HRN\Niko_">
+        <ConnectionNode Name="localhost:DESKTOP-MDC6S04\lucia">
           <Created>2025-06-17T20:34:32.9532101-03:00</Created>
           <Type>SQL</Type>
           <Server>localhost</Server>
@@ -70,12 +70,6 @@
           <AssociatedConnUserName />
           <FullPath>02_TestingInsertModifyDeleteSP.sql</FullPath>
         </FileNode>
-        <FileNode Name="03_Carga_Datos_Minimos.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:localhost:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>localhost</AssociatedConnSrvName>
-          <AssociatedConnUserName />
-          <FullPath>03_Carga_Datos_Minimos.sql</FullPath>
-        </FileNode>
         <FileNode Name="03_ImportSP.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:localhost:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>localhost</AssociatedConnSrvName>
@@ -87,12 +81,6 @@
           <AssociatedConnSrvName>localhost</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>04_ExecProceduresImport.sql</FullPath>
-        </FileNode>
-        <FileNode Name="04_Import.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:localhost:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>localhost</AssociatedConnSrvName>
-          <AssociatedConnUserName />
-          <FullPath>04_Import.sql</FullPath>
         </FileNode>
         <FileNode Name="05_Reportes.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:localhost:True</AssociatedConnectionMoniker>
