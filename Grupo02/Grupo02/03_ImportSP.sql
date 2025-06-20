@@ -769,9 +769,37 @@ BEGIN
 
         FETCH NEXT FROM cur INTO @nro_socio, @nombre_actividad, @fecha_asistencia, @asistencia, @profesor;
     END
-
     CLOSE cur;
     DEALLOCATE cur;
+
+	DECLARE 
+		@id_socio INT,
+		@id_actividad INT,
+		@fecha_inscripcion DATE;
+
+	DECLARE cur_inscrip CURSOR FOR
+	SELECT 
+		id_socio,
+		id_actividad,
+		MIN(fecha_asistencia) AS fecha_inscripcion
+	FROM actividad.presentismo
+	GROUP BY id_socio, id_actividad;
+
+	OPEN cur_inscrip;
+
+	FETCH NEXT FROM cur_inscrip INTO @id_socio, @id_actividad, @fecha_inscripcion;
+
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		EXEC actividad.insertar_inscripcion_actividad
+			@id_socio = @id_socio, 
+			@id_actividad = @id_actividad, 
+			@fecha_inscripcion = @fecha_inscripcion;
+
+		FETCH NEXT FROM cur_inscrip INTO @id_socio, @id_actividad, @fecha_inscripcion;
+	END
+	CLOSE cur_inscrip;
+	DEALLOCATE cursor_inscripciones;
 END;
 GO
 
