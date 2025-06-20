@@ -66,6 +66,58 @@ GO
 -----------------------------------------------------------------------------
 -- REPORTE DE INGRESOS DE ACTIVIDADES (DESDE ENERO)
 -----------------------------------------------------------------------------
+-- Paso 1: Para cada socio y actividad, busco la inscripción y la última fecha en presentismo
+WITH base_inscripciones AS (
+    SELECT 
+        ia.id_socio,
+        ia.id_actividad,
+        a.nombre AS actividad,
+        a.costo_mensual,
+        ia.fecha_inscripcion,
+        DATEFROMPARTS(YEAR(MAX(p.fecha_asistencia)), MONTH(MAX(p.fecha_asistencia)), 1) AS fecha_fin
+    FROM actividad.inscripcion_actividad ia
+    JOIN actividad.actividad a ON a.id_actividad = ia.id_actividad
+    JOIN actividad.presentismo p 
+        ON p.id_socio = ia.id_socio 
+       AND p.id_actividad = ia.id_actividad
+    GROUP BY 
+        ia.id_socio, ia.id_actividad, a.nombre, a.costo_mensual, ia.fecha_inscripcion
+),
+-- Paso 2: Genero los meses desde la inscripción hasta su último registro en presentismo
+meses_generados AS (
+    SELECT
+        bi.id_socio,
+        bi.id_actividad,
+        bi.actividad,
+        bi.costo_mensual,
+        DATEFROMPARTS(YEAR(bi.fecha_inscripcion), MONTH(bi.fecha_inscripcion), 1) AS mes,
+        bi.fecha_fin
+    FROM base_inscripciones bi
+    UNION ALL
+    SELECT
+        mg.id_socio,
+        mg.id_actividad,
+        mg.actividad,
+        mg.costo_mensual,
+        DATEADD(MONTH, 1, mg.mes),
+        mg.fecha_fin
+    FROM meses_generados mg
+    WHERE mg.mes < mg.fecha_fin
+)
+-- Paso 3: Agrupo por mes y actividad, y calculo ingresos estimados
+SELECT
+    actividad,
+    FORMAT(mes, 'yyyy-MM') AS mes,
+    COUNT(*) * MAX(costo_mensual) AS ingreso_mensual,
+    SUM(COUNT(*) * MAX(costo_mensual)) OVER (
+        PARTITION BY actividad
+        ORDER BY mes
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS ingreso_acumulado
+FROM meses_generados
+GROUP BY actividad, mes
+ORDER BY actividad, mes
+OPTION (MAXRECURSION 1000);
 
 -----------------------------------------------------------------------------
 -- REPORTE DE SOCIOS AUSENTES EN SUS ACTIVIDADES
