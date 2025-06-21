@@ -30,7 +30,7 @@ GRANT EXECUTE ON socio.ver_todos_los_empleados TO Role_Autoridades;
 
 
 -- ==========================================================
--- 3️ CREACION DE PROCEDIMIENTOS ENCRIPTACION
+-- CREACION DE PROCEDIMIENTOS ENCRIPTACION
 -- ==========================================================
 -- Encriptar todos los empleados
 CREATE OR ALTER PROCEDURE socio.encriptar_todos_los_empleados
@@ -107,7 +107,7 @@ END;
 GO
 
 -- ==========================================================
--- 4️ INSERTAR EMPLEADOS ENCRIPTADOS DE PRUEBA
+--  INSERTAR EMPLEADOS ENCRIPTADOS DE PRUEBA
 -- ==========================================================
 EXEC socio.insertar_empleado_encriptado 
     @nombre = N'Juan', 
@@ -190,7 +190,7 @@ EXEC socio.insertar_empleado_encriptado
     @rol = 'Jefe de Tesorería';
 
 	-- ==========================================================
--- 5️ CREACION DE LOGINS Y ASIGNACION DE ROLES
+--  CREACION DE LOGINS Y ASIGNACION DE ROLES
 -- ==========================================================
 -- TESORERIA
 CREATE LOGIN usuario_juan    WITH PASSWORD = 'ContraseñaSegura1!';

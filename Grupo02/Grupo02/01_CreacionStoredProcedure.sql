@@ -332,13 +332,13 @@ CREATE OR ALTER PROCEDURE factura.insertar_pago
     @tipo_pago VARCHAR(20),
     @fecha_pago DATE,
     @monto NUMERIC(15,2),
-    @nro_socio VARCHAR(10) -- nuevo parámetro para el socio
+    @nro_socio VARCHAR(10) 
 )
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Validaciones como antes...
+    
 
     IF @id_factura IS NULL
     BEGIN
@@ -470,7 +470,7 @@ GO
 -- ==========================================
 Create procedure factura.eliminicar_pago (@id int) as
 BEGIN
-	--validaciones
+	
 	IF @id is NULL
 		begin
 			raiserror('Id invalida',16,1);
@@ -480,7 +480,7 @@ BEGIN
         RAISERROR ('id no existe', 16, 1);
         RETURN;
     END
-	--termina validacion
+	
 	delete factura.pago where id_pago = @id
 END;
 go
@@ -509,7 +509,7 @@ BEGIN
     DECLARE @edad INT;
     DECLARE @categoria VARCHAR(50);
 
-    -- Validaciones omitidas por brevedad (pueden quedar igual)
+    
 
     SET @edad = DATEDIFF(YEAR, @fecha_nacimiento, GETDATE());
     IF DATEADD(YEAR, @edad, @fecha_nacimiento) > GETDATE()
@@ -714,12 +714,12 @@ CREATE PROCEDURE socio.modificar_grupo_familiar
     @parentesco VARCHAR(50)
 AS
 BEGIN
-	--validaciones
+	
     IF NOT EXISTS (SELECT 1 FROM socio.grupo_familiar WHERE id_grupo_familiar = @id_grupo_familiar) BEGIN
         RAISERROR('El grupo familiar no existe', 16, 1);
         RETURN;
     END
-	--termina validacion
+	
     UPDATE socio.grupo_familiar
     SET email = @email,
         telefono = @telefono,
@@ -735,12 +735,12 @@ CREATE PROCEDURE socio.eliminar_grupo_familiar
     @id_grupo_familiar INT
 AS
 BEGIN
-	--validaciones
+	
     IF NOT EXISTS (SELECT 1 FROM socio.grupo_familiar WHERE id_grupo_familiar = @id_grupo_familiar) BEGIN
         RAISERROR('El grupo familiar no existe', 16, 1);
         RETURN;
     END
-	--termina validacion
+
     DELETE FROM socio.grupo_familiar
     WHERE id_grupo_familiar = @id_grupo_familiar;
 END;
@@ -757,7 +757,7 @@ CREATE PROCEDURE socio.insertar_membresia
     @costo NUMERIC(15,2)
 AS
 BEGIN
-    -- Validaciones
+  
     IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio) BEGIN
         RAISERROR('El socio no existe', 16, 1);
         RETURN;
@@ -790,7 +790,7 @@ CREATE PROCEDURE socio.modificar_membresia
     @costo NUMERIC(15,2)
 AS
 BEGIN
-    -- Validaciones
+   
     IF NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia) BEGIN
         RAISERROR('La membresia no existe', 16, 1);
         RETURN;
@@ -811,7 +811,7 @@ BEGIN
         RAISERROR('El costo debe ser mayor a cero', 16, 1);
         RETURN;
     END
-	--termina validacion
+	
     UPDATE socio.membresia
     SET fecha_renovada = @fecha_renovada,
         fecha_fin = @fecha_fin,
@@ -827,12 +827,12 @@ CREATE PROCEDURE socio.eliminar_membresia
     @id_membresia INT
 AS
 BEGIN
-	--validaciones
+	
     IF NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia) BEGIN
         RAISERROR('La membresia no existe', 16, 1);
         RETURN;
     END
-	--termina validacion
+	
     DELETE FROM socio.membresia WHERE id_membresia = @id_membresia;
 END;
 GO
@@ -846,7 +846,7 @@ CREATE PROCEDURE socio.insertar_categoria_socio
 	@fecha_vigencia date
 AS
 BEGIN
-	--validaciones
+	
     IF @costo <= 0 BEGIN
         RAISERROR('El costo debe ser mayor a cero', 16, 1);
         RETURN;
@@ -856,7 +856,7 @@ BEGIN
         RAISERROR('La categoria ya existe', 16, 1);
         RETURN;
     END
-	--termina validacion
+	
     INSERT INTO socio.categoria_socio (nombre, fecha_vigencia, costo)
     VALUES (@nombre, @fecha_vigencia, @costo);
 END;
@@ -871,12 +871,12 @@ CREATE PROCEDURE socio.modificar_categoria_socio
     @costo INT
 AS
 BEGIN
-	--validaciones
+	
     IF @costo <= 0 BEGIN
         RAISERROR('El costo debe ser mayor a cero', 16, 1);
         RETURN;
     END
-	--termina validacion
+	
     UPDATE socio.categoria_socio
     SET fecha_vigencia = @fecha_vigencia,
         costo = @costo
@@ -891,12 +891,12 @@ CREATE PROCEDURE socio.eliminar_categoria_socio
     @nombre VARCHAR(50)
 AS
 BEGIN
-	--validaciones
+	
     IF NOT EXISTS (SELECT 1 FROM socio.categoria_socio WHERE nombre = @nombre) BEGIN
         RAISERROR('La categoria no existe', 16, 1);
         RETURN;
     END
-	--termina validacion
+	
     DELETE FROM socio.categoria_socio WHERE nombre = @nombre;
 END;
 GO
@@ -911,13 +911,13 @@ CREATE PROCEDURE actividad.insertar_actividad
 	@fecha_vigencia date
 AS
 BEGIN
-	--validaciones
+	
 	IF @costo_mensual is NULL or @costo_mensual < 0
 	begin
 		raiserror('Costo invalido',16,1);
 		return
 	end
-	--termina validacion
+	
     INSERT INTO actividad.actividad (nombre, costo_mensual, fecha_vigencia)
     VALUES (@nombre, @costo_mensual, @fecha_vigencia);
 END;
@@ -933,7 +933,7 @@ CREATE or alter PROCEDURE actividad.modificar_actividad
 	@fecha_vigencia DATE
 AS
 BEGIN
-	--validaciones
+	
     IF NOT EXISTS (SELECT 1 FROM actividad.actividad WHERE id_actividad = @id)
     BEGIN
         RAISERROR('Actividad no encontrada', 16, 1);
@@ -944,7 +944,7 @@ BEGIN
 		raiserror('Costo invalido',16,1);
 		return
 	end
-	--termina validacion
+	
     UPDATE actividad.actividad
     SET nombre = @nombre, costo_mensual = @costo_mensual, fecha_vigencia = @fecha_vigencia
     WHERE id_actividad = @id;
@@ -957,13 +957,13 @@ CREATE PROCEDURE actividad.eliminar_actividad
     @id INT
 AS
 BEGIN
-	--validaciones
+	
     IF NOT EXISTS (SELECT 1 FROM actividad.actividad WHERE id_actividad = @id)
     BEGIN
         RAISERROR('Actividad no encontrada', 16, 1);
         RETURN;
     END
-	--termina validacion
+	
     DELETE FROM actividad.actividad WHERE id_actividad = @id;
 END;
 GO
@@ -977,7 +977,7 @@ CREATE PROCEDURE actividad.insertar_actividad_extra
 	@fecha_vigencia date
 AS
 BEGIN
-	--validaciones
+	
     IF  @costo_socio < 0
     BEGIN
         RAISERROR('Costo de socio invalido', 16, 1);
@@ -989,7 +989,7 @@ BEGIN
         RAISERROR('Costo de invitado invalido', 16, 1);
         RETURN;
     END
-	--termina validacion
+
     INSERT INTO actividad.actividad_extra (nombre, costo_socio, costo_invitado, fecha_vigencia)
     VALUES (@nombre, @costo_socio, @costo_invitado, @fecha_vigencia);
 END;
@@ -1005,7 +1005,7 @@ CREATE PROCEDURE actividad.modificar_actividad_extra
 	@fecha_vigencia date
 AS
 BEGIN
-	--validaciones
+	
     IF NOT EXISTS (SELECT 1 FROM actividad.actividad_extra WHERE id_actividad_extra = @id)
     BEGIN
         RAISERROR('Actividad extra no encontrada', 16, 1);
@@ -1023,7 +1023,7 @@ BEGIN
         RAISERROR('Costo de invitado invalido', 16, 1);
         REturn
 	end
-	--termina validacion
+	
     UPDATE actividad.actividad_extra
     SET nombre = @nombre,
         costo_socio = @costo_socio,
@@ -1039,13 +1039,13 @@ CREATE PROCEDURE actividad.eliminar_actividad_extra
     @id INT
 AS
 BEGIN
-	--validaciones
+	
     IF NOT EXISTS (SELECT 1 FROM actividad.actividad_extra WHERE id_actividad_extra = @id)
     BEGIN
         RAISERROR('Actividad extra no encontrada', 16, 1);
         RETURN;
     END
-	--termina validacion
+	
     DELETE FROM actividad.actividad_extra
     WHERE id_actividad_extra = @id;
 END;
@@ -1076,7 +1076,7 @@ BEGIN
         RETURN;
     END
 
-    -- Validar si ya está inscripto
+    -- Validar si ya esta inscripto
     IF EXISTS (
         SELECT 1 FROM actividad.inscripcion_actividad
         WHERE id_socio = @id_socio AND id_actividad = @id_actividad
@@ -1093,7 +1093,7 @@ BEGIN
         RETURN;
     END
 
-    -- Insertar la inscripción con fecha
+    -- Insertar la inscripcion con fecha
     INSERT INTO actividad.inscripcion_actividad (id_socio, id_actividad, fecha_inscripcion)
     VALUES (@id_socio, @id_actividad, @fecha_inscripcion);
 END;
@@ -1150,7 +1150,7 @@ BEGIN
         RETURN;
     END
 
-    -- (Opcional) Validar que no sea la misma fecha que ya está registrada
+    --  Validar que no sea la misma fecha que ya esta registrada
     IF EXISTS (
         SELECT 1 FROM actividad.inscripcion_actividad
         WHERE id_socio = @id_socio AND id_actividad = @id_actividad AND fecha_inscripcion =  @fecha_inscripcion
@@ -1160,7 +1160,7 @@ BEGIN
         RETURN;
     END
 
-    -- Actualizar la inscripción con la nueva fecha
+    -- Actualizar la inscripcion con la nueva fecha
     UPDATE actividad.inscripcion_actividad
     SET fecha_inscripcion =  @fecha_inscripcion
     WHERE id_socio = @id_socio AND id_actividad = @id_actividad;
