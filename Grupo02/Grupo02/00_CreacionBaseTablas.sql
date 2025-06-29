@@ -112,6 +112,7 @@ CREATE TABLE actividad.inscripcion_actividad (
     PRIMARY KEY (id_socio, id_actividad)
 );
 
+
 -- Participación en actividades extra
 CREATE TABLE actividad.participante_actividad_extra (
     id_participante int identity PRIMARY KEY,
@@ -150,7 +151,9 @@ CREATE TABLE factura.detalle_factura (
     id_participante INT REFERENCES actividad.participante_actividad_extra(id_participante),
     id_reserva INT REFERENCES actividad.reserva_sum(id_reserva),
     monto NUMERIC(15,2),
-	fecha date
+	fecha date,
+	id_socio INT NULL,
+    id_actividad INT NULL
 );
 
 -- Descuentos
