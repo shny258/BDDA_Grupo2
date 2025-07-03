@@ -12,7 +12,7 @@
 --Martins Louro  Luciano DNI:42364189  
 
 if not exists (select name from sys.databases where name = 'Com5600G02')
-	create database Com5600G02 COLLATE Modern_Spanish_CI_AS;
+	create database Com5600G02 COLLATE Modern_Spanish_100_CI_AI_UTF8;
 
 go
 
