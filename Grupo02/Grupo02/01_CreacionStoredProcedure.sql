@@ -22,7 +22,8 @@ CREATE or alter PROCEDURE factura.insertar_detalle_factura
     @id_participante INT,
     @id_reserva INT,
     @monto NUMERIC(15,2),
-    @fecha DATE
+    @fecha DATE,
+	@id_actividad int
 )
 AS
 BEGIN
@@ -35,9 +36,10 @@ BEGIN
         NOT EXISTS (SELECT 1 FROM actividad.participante_actividad_extra WHERE id_participante = @id_participante)
         AND NOT EXISTS (SELECT 1 FROM socio.membresia WHERE id_membresia = @id_membresia)
         AND NOT EXISTS (SELECT 1 FROM actividad.reserva_sum WHERE id_reserva = @id_reserva)
+		AND NOT EXISTS (SELECT 1 FROM actividad.actividad WHERE id_actividad = @id_actividad)
     )
     BEGIN
-        RAISERROR('Factura o alguno de los IDs (participante, membresía, reserva) no existe', 16, 1);
+        RAISERROR('Factura o alguno de los IDs (participante, membresía, reserva, actividad) no existe', 16, 1);
         RETURN;
     END
 
@@ -56,8 +58,8 @@ BEGIN
     END
 
     -- Insertar el detalle
-    INSERT INTO factura.detalle_factura (id_factura, id_membresia, id_participante, id_reserva, monto, fecha)
-    VALUES (@id_factura, @id_membresia, @id_participante, @id_reserva, @monto, @fecha);
+    INSERT INTO factura.detalle_factura (id_factura, id_membresia, id_participante, id_reserva, monto, fecha, id_actividad)
+    VALUES (@id_factura, @id_membresia, @id_participante, @id_reserva, @monto, @fecha, @id_actividad);
 END;
 GO
 
@@ -1157,6 +1159,11 @@ CREATE or alter PROCEDURE actividad.insertar_inscripcion_actividad
 AS
 BEGIN
     SET NOCOUNT ON;
+	DECLARE @nro_socio_insc varchar(10);
+	DECLARE @id_factura_insc INT;
+	DECLARE @monto_insc NUMERIC(15,2);
+	DECLARE @id_membresia_insc int;
+
 
     -- Validar existencia del socio
     IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio)
@@ -1188,10 +1195,24 @@ BEGIN
         RAISERROR('Debe especificar una fecha de inscripción', 16, 1);
         RETURN;
     END
+	--Validar si existe la factura
+
+	SELECT @nro_socio_insc = nro_socio from socio.socio where id_socio = @id_socio;
+	SELECT @id_factura_insc = id_factura from factura.factura_mensual where nro_socio = @nro_socio_insc;
+	SELECT @monto_insc = costo_mensual from actividad.actividad where id_actividad = @id_actividad;
+
+
+	if not exists ( select 1 from factura.factura_mensual where nro_socio = @nro_socio_insc)
+	begin
+		Raiserror('No existe factura_mensual del socio inscripto',16,1);
+		return;
+	end;
 
     -- Insertar la inscripcion con fecha
     INSERT INTO actividad.inscripcion_actividad (id_socio, id_actividad, fecha_inscripcion)
     VALUES (@id_socio, @id_actividad, @fecha_inscripcion);
+	exec factura.insertar_detalle_factura @id_factura = @id_factura_insc, @id_membresia = NULL, @id_participante = NULL, @id_reserva = NULL, @monto = @monto_insc, @fecha = @fecha_inscripcion, @id_actividad = @id_actividad;
+
 END;
 GO
 
