@@ -77,14 +77,8 @@ CREATE TABLE socio.categoria_socio (
 
 -- Grupo familiar (responsables/tutores)
 CREATE TABLE socio.grupo_familiar (
-    id_grupo_familiar int identity (1,1) PRIMARY KEY,
-    nombre VARCHAR(50),
-    apellido VARCHAR(50),
-    dni VARCHAR(10) UNIQUE,
-    email VARCHAR(50) UNIQUE,
-    fecha_nacimiento DATE,
-    telefono VARCHAR(20),
-    parentesco VARCHAR(50)
+    id_grupo_familiar INT IDENTITY(1,1) PRIMARY KEY,
+    fecha_creacion DATETIME NOT NULL DEFAULT GETDATE()
 );
 
 -- Tabla de socios
