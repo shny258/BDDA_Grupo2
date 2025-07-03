@@ -29,6 +29,7 @@ EXEC socio.importar_socios_excel @ruta = 'C:\Importar\Datos socios.xlsx';
 --IMPORTAR Y INSERTAR A SOCIO.CATEGORIA_SOCIO 
 --=================================================================
 EXEC socio.importar_categorias_socio @path = 'C:\Importar\Datos socios.xlsx';
+--agregar categoria responsable
 --select * from socio.categoria_socio
 
 --=================================================================
@@ -49,12 +50,12 @@ EXEC socio.importar_socios_excel2 @ruta = 'C:\Importar\Datos socios.xlsx';
 --=================================================================
 EXEC socio.procesar_socios_temp2;
 EXEC factura.generar_facturas_mensuales @anio = 2024; --Generar Facturas?
---select * from socio.socio
+--select * from socio.socio order by id_grupo_familiar
 
 --=================================================================
 --Importar E INSERTAR tabla de PAGOS CUOTAS
 --=================================================================
-EXEC factura.importar_excel_a_temporal @ruta = '[PATH]\Datos socios.xlsx';
+EXEC factura.importar_excel_a_temporal @ruta = 'C:\Importar\Datos socios.xlsx';
 EXEC factura.procesar_pagos_temporales;
 --select * from factura.pago
 select * from factura.factura_mensual
@@ -65,7 +66,7 @@ delete factura.factura_mensual
 --IMPORTAR DE TARIFA E INSERTAR A ACTIVIDAD.ACTIVIDAD 
 --=================================================================
 EXEC actividad.importar_actividades_regulares @path = 'C:\Importar\Datos socios.xlsx';
-
+select * from actividad.actividad
 /*
 Ejecutar en caso de que sea necesario modificar la actividad de ajedrez
 
