@@ -158,7 +158,7 @@ GO
 --=================================================================
 --CARGAR DATOS DE SOCIOS_TEMP A SOCIOS.SOCIOS
 --=================================================================
-	CREATE OR ALTER PROCEDURE socio.procesar_socios_temp
+CREATE OR ALTER PROCEDURE socio.procesar_socios_temp
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -176,36 +176,66 @@ BEGIN
         @nro_cobertura_medica VARCHAR(50),
         @id_medio_de_pago INT = 1,
         @id_grupo_familiar INT = NULL,
-		@nro_socio_rp varchar(10);
+        @nro_socio_rp VARCHAR(10),
+        @categoria_ingresada VARCHAR(50),
+        @edad INT;
 
     DECLARE cur CURSOR FOR 
-        SELECT nro_socio, dni, nombre, apellido, email, fecha_nacimiento, 
-               telefono_contacto, telefono_emergencia, cobertura_medica, nro_cobertura_medica,nro_socio_rp
+        SELECT 
+            nro_socio, dni, nombre, apellido, email, fecha_nacimiento,
+            telefono_contacto, telefono_emergencia, cobertura_medica,
+            nro_cobertura_medica, nro_socio_rp
         FROM socio.socio_temp;
 
     OPEN cur;
-    FETCH NEXT FROM cur INTO @nro_socio, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
-                             @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica,@nro_socio_rp;
+
+    FETCH NEXT FROM cur INTO 
+        @nro_socio, @dni, @nombre, @apellido, @email, @fecha_nacimiento,
+        @telefono_contacto, @telefono_emergencia, @cobertura_medica,
+        @nro_cobertura_medica, @nro_socio_rp;
 
     WHILE @@FETCH_STATUS = 0
     BEGIN
-        EXEC socio.insertar_socio
-            @nro_socio = @nro_socio,
-            @dni = @dni,
-            @nombre = @nombre,
-            @apellido = @apellido,
-            @email = @email,
-            @fecha_nacimiento = @fecha_nacimiento,
-            @telefono_contacto = @telefono_contacto,
-            @telefono_emergencia = @telefono_emergencia,
-            @cobertura_medica = @cobertura_medica,
-            @nro_cobertura_medica = @nro_cobertura_medica,
-            @id_medio_de_pago = 1,
-          @id_grupo_familiar = @id_grupo_familiar,
-			@nro_socio_rp = @nro_socio_rp;
+        BEGIN TRY
+            -- Calcular edad
+            SET @edad = DATEDIFF(YEAR, @fecha_nacimiento, GETDATE());
+            IF DATEADD(YEAR, @edad, @fecha_nacimiento) > GETDATE()
+                SET @edad = @edad - 1;
 
-        FETCH NEXT FROM cur INTO @nro_socio, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
-                                 @telefono_contacto, @telefono_emergencia, @cobertura_medica, @nro_cobertura_medica,@nro_socio_rp;
+            -- Determinar categoría automáticamente
+            IF @edad <= 12
+                SET @categoria_ingresada = 'Menor';
+            ELSE IF @edad BETWEEN 13 AND 17
+                SET @categoria_ingresada = 'Cadete';
+            ELSE
+                SET @categoria_ingresada = 'Mayor';
+
+            -- Llamar al SP de inserción
+            EXEC socio.insertar_socio
+                @nro_socio = @nro_socio,
+                @dni = @dni,
+                @nombre = @nombre,
+                @apellido = @apellido,
+                @email = @email,
+                @fecha_nacimiento = @fecha_nacimiento,
+                @telefono_contacto = @telefono_contacto,
+                @telefono_emergencia = @telefono_emergencia,
+                @cobertura_medica = @cobertura_medica,
+                @nro_cobertura_medica = @nro_cobertura_medica,
+                @id_medio_de_pago = @id_medio_de_pago,
+                @id_grupo_familiar = @id_grupo_familiar,
+                @nro_socio_rp = @nro_socio_rp,
+                @categoria_ingresada = @categoria_ingresada;
+        END TRY
+        BEGIN CATCH
+            PRINT 'Error al insertar socio: ' + ISNULL(@nro_socio, '-') + 
+                  ' - ' + ERROR_MESSAGE();
+        END CATCH;
+
+        FETCH NEXT FROM cur INTO 
+            @nro_socio, @dni, @nombre, @apellido, @email, @fecha_nacimiento,
+            @telefono_contacto, @telefono_emergencia, @cobertura_medica,
+            @nro_cobertura_medica, @nro_socio_rp;
     END
 
     CLOSE cur;
@@ -286,9 +316,6 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    ------------------------------------------------------------------
-    -- 1.  Declaro variables de trabajo
-    ------------------------------------------------------------------
     DECLARE 
         @nro_socio           VARCHAR(10),
         @nro_socio_rp        VARCHAR(10),
@@ -301,23 +328,18 @@ BEGIN
         @telefono_emergencia VARCHAR(20),
         @cobertura_medica    VARCHAR(100),
         @nro_cobertura_medica VARCHAR(50),
-        @id_medio_de_pago    INT   = 1,   -- 1 = Débito, por ejemplo
+        @id_medio_de_pago    INT = 1,
         @id_grupo_familiar   INT,
         @id_socio_rp         INT,
         @edad                INT,
-        @categoria           VARCHAR(50);
+        @categoria_ingresada VARCHAR(50);
 
-    ------------------------------------------------------------------
-    -- 2.  Cursor: primero los RPs, luego los familiares
-    ------------------------------------------------------------------
     DECLARE cur CURSOR FOR
-        SELECT  nro_socio, nro_socio_rp, dni, nombre, apellido, email,
-                fecha_nacimiento, telefono_contacto, telefono_emergencia,
-                cobertura_medica, nro_cobertura_medica
-        FROM    socio.socio_temp2
-        ORDER BY
-            CASE WHEN nro_socio_rp IS NULL OR nro_socio_rp = '' THEN 0 ELSE 1 END; 
-            -- 0 = RPs; 1 = familiares.
+        SELECT nro_socio, nro_socio_rp, dni, nombre, apellido, email,
+               fecha_nacimiento, telefono_contacto, telefono_emergencia,
+               cobertura_medica, nro_cobertura_medica
+        FROM socio.socio_temp2
+        ORDER BY CASE WHEN nro_socio_rp IS NULL OR nro_socio_rp = '' THEN 0 ELSE 1 END;
 
     OPEN cur;
 
@@ -326,109 +348,75 @@ BEGIN
         @fecha_nacimiento, @telefono_contacto, @telefono_emergencia,
         @cobertura_medica, @nro_cobertura_medica;
 
-    ------------------------------------------------------------------
-    -- 3.  Recorro todos los registros
-    ------------------------------------------------------------------
     WHILE @@FETCH_STATUS = 0
     BEGIN
-        ------------------------------------------------------------------
-        -- 3.1  Calculo edad y categoría (opcional)
-        ------------------------------------------------------------------
+        -- Calcular edad
         SET @edad = DATEDIFF(YEAR, @fecha_nacimiento, GETDATE());
         IF DATEADD(YEAR, @edad, @fecha_nacimiento) > GETDATE()
             SET @edad = @edad - 1;
 
+        -- Determinar categoría
         IF @edad <= 12
-            SET @categoria = 'Menor';
+            SET @categoria_ingresada = 'Menor';
         ELSE IF @edad BETWEEN 13 AND 17
-            SET @categoria = 'Cadete';
+            SET @categoria_ingresada = 'Cadete';
         ELSE
-            SET @categoria = 'Mayor';
+            SET @categoria_ingresada = 'Mayor';
 
-        ------------------------------------------------------------------
-        -- 3.2  Reseteo id_grupo_familiar antes de cada ciclo
-        ------------------------------------------------------------------
         SET @id_grupo_familiar = NULL;
 
-        ------------------------------------------------------------------
-        -- 3.3  Si TIENE Responsable de Pago ..............................
-        ------------------------------------------------------------------
+        -- Si tiene responsable
         IF @nro_socio_rp IS NOT NULL AND @nro_socio_rp <> ''
         BEGIN
-            --------------------------------------------------------------
-            -- Localizo al RP y su grupo (si ya existe)
-            --------------------------------------------------------------
-            SELECT @id_socio_rp       = id_socio,
-                   @id_grupo_familiar = id_grupo_familiar
-            FROM   socio.socio
-            WHERE  nro_socio = @nro_socio_rp;
+            SELECT 
+                @id_socio_rp = id_socio,
+                @id_grupo_familiar = id_grupo_familiar
+            FROM socio.socio
+            WHERE nro_socio = @nro_socio_rp;
 
-            --------------------------------------------------------------
-            -- Si el RP ya estaba en la tabla socio, pero aún NO tenía
-            -- grupo, se lo creo y lo vinculo.
-            --------------------------------------------------------------
+            -- Si el responsable existe pero no tiene grupo familiar, se lo creo
             IF @id_socio_rp IS NOT NULL AND @id_grupo_familiar IS NULL
             BEGIN
-                -- Creo fila “Responsable” en grupo_familiar
-                INSERT INTO socio.grupo_familiar
-                       (nombre, apellido, dni, email, fecha_nacimiento,
-                        telefono, parentesco)
-                SELECT  nombre, apellido, dni, email, fecha_nacimiento,
-                        telefono_contacto, 'Familiar'
-                FROM    socio.socio
-                WHERE   id_socio = @id_socio_rp;
+                INSERT INTO socio.grupo_familiar (fecha_creacion)
+                VALUES (GETDATE());
 
-                -- Nuevo id del grupo
                 SET @id_grupo_familiar = SCOPE_IDENTITY();
 
-                -- Actualizo al RP con su propio grupo
                 UPDATE socio.socio
-                SET    id_grupo_familiar = @id_grupo_familiar
-                WHERE  id_socio = @id_socio_rp;
+                SET id_grupo_familiar = @id_grupo_familiar
+                WHERE id_socio = @id_socio_rp;
             END
-
-            --------------------------------------------------------------
-            -- Si el RP TODAVÍA no existe (p.ej. se va a importar luego),
-            -- dejamos @id_grupo_familiar en NULL; más tarde se podrá
-            -- actualizar mediante un proceso de reconciliación.
-            --------------------------------------------------------------
         END
-
-        ------------------------------------------------------------------
-        -- 3.4  Si NO tiene Responsable (es RP) ..........................
-        ------------------------------------------------------------------
-        IF @nro_socio_rp IS NULL OR @nro_socio_rp = ''
+        ELSE
         BEGIN
-            --------------------------------------------------------------
-            -- Cada RP debe tener su PROPIO registro en grupo_familiar
-            -- con parentesco = 'Responsable'
-            --------------------------------------------------------------
-            INSERT INTO socio.grupo_familiar
-                   (nombre, apellido, dni, email, fecha_nacimiento,
-                    telefono, parentesco)
-            VALUES (@nombre, @apellido, @dni, @email, @fecha_nacimiento,
-                    @telefono_contacto, 'Familiar');
+            -- Si no tiene responsable, crear nuevo grupo familiar
+            INSERT INTO socio.grupo_familiar (fecha_creacion)
+            VALUES (GETDATE());
 
             SET @id_grupo_familiar = SCOPE_IDENTITY();
         END
 
-        ------------------------------------------------------------------
-        -- 3.5  Inserto el socio, apuntando al grupo correcto
-        ------------------------------------------------------------------
-        EXEC  socio.insertar_socio
-              @nro_socio            = @nro_socio,
-              @dni                  = @dni,
-              @nombre               = @nombre,
-              @apellido             = @apellido,
-              @email                = @email,
-              @fecha_nacimiento     = @fecha_nacimiento,
-              @telefono_contacto    = @telefono_contacto,
-              @telefono_emergencia  = @telefono_emergencia,
-              @cobertura_medica     = @cobertura_medica,
-              @nro_cobertura_medica = @nro_cobertura_medica,
-              @id_medio_de_pago     = @id_medio_de_pago,
-              @id_grupo_familiar    = @id_grupo_familiar,  -- <-- MISMO grupo que el RP
-              @nro_socio_rp         = @nro_socio_rp;
+        -- Insertar socio
+        BEGIN TRY
+            EXEC socio.insertar_socio
+                @nro_socio = @nro_socio,
+                @dni = @dni,
+                @nombre = @nombre,
+                @apellido = @apellido,
+                @email = @email,
+                @fecha_nacimiento = @fecha_nacimiento,
+                @telefono_contacto = @telefono_contacto,
+                @telefono_emergencia = @telefono_emergencia,
+                @cobertura_medica = @cobertura_medica,
+                @nro_cobertura_medica = @nro_cobertura_medica,
+                @id_medio_de_pago = @id_medio_de_pago,
+                @id_grupo_familiar = @id_grupo_familiar,
+                @nro_socio_rp = @nro_socio_rp,
+                @categoria_ingresada = @categoria_ingresada;
+        END TRY
+        BEGIN CATCH
+            PRINT 'Error al insertar socio ' + ISNULL(@nro_socio, '-') + ': ' + ERROR_MESSAGE();
+        END CATCH
 
         FETCH NEXT FROM cur INTO
             @nro_socio, @nro_socio_rp, @dni, @nombre, @apellido, @email,
@@ -440,7 +428,6 @@ BEGIN
     DEALLOCATE cur;
 END;
 GO
-
 --=================================================================
 --Importar tabla de PAGOS CUOTAS
 --=================================================================
