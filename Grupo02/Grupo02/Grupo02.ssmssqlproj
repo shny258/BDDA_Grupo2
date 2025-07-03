@@ -59,8 +59,8 @@
           <FullPath>05_Reportes.sql</FullPath>
         </FileNode>
         <FileNode Name="06_Seguridad.sql">
-          <AssociatedConnectionMoniker />
-          <AssociatedConnSrvName />
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-GR0AA0R:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-GR0AA0R</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>06_Seguridad.sql</FullPath>
         </FileNode>

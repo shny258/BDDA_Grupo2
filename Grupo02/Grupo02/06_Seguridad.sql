@@ -240,16 +240,18 @@ ALTER ROLE Role_Autoridades ADD MEMBER usuario_sofia;
 ALTER ROLE Role_Autoridades ADD MEMBER usuario_roberto;
 
 
+--SELECT 
+--    u.name AS Usuario,
+--    r.name AS Rol
+--FROM sys.database_principals u
+--LEFT JOIN sys.database_role_members rm ON u.principal_id = rm.member_principal_id
+--LEFT JOIN sys.database_principals r ON rm.role_principal_id = r.principal_id
+--WHERE u.type_desc = 'SQL_USER'
+--ORDER BY u.name, r.name;
 
-
-
-
-
-SELECT 
-    u.name AS Usuario,
-    r.name AS Rol
-FROM sys.database_principals u
-LEFT JOIN sys.database_role_members rm ON u.principal_id = rm.member_principal_id
-LEFT JOIN sys.database_principals r ON rm.role_principal_id = r.principal_id
-WHERE u.type_desc = 'SQL_USER'
-ORDER BY u.name, r.name;
+--SELECT SYSTEM_USER AS Login_Usado, USER_NAME() AS Usuario_BD;
+ 
+ 
+--EXECUTE AS USER = 'usuario_juan';
+--EXEC socio.ver_todos_los_empleados;
+--REVERT;
