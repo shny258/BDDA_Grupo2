@@ -130,10 +130,10 @@ CREATE TABLE actividad.actividad_extra (
 
 -- Inscripción a actividades deportivas regulares
 CREATE TABLE actividad.inscripcion_actividad (
+	id_inscripcion_actividad int identity PRIMARY KEY,
     id_socio INT REFERENCES socio.socio(id_socio),
     id_actividad INT REFERENCES actividad.actividad(id_actividad),
-    fecha_inscripcion DATE NOT NULL,
-    PRIMARY KEY (id_socio, id_actividad)
+    fecha_inscripcion DATE NOT NULL
 );
 
 

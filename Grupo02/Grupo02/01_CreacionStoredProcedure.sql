@@ -1244,21 +1244,37 @@ CREATE or alter PROCEDURE actividad.insertar_inscripcion_actividad
 AS
 BEGIN
     SET NOCOUNT ON;
-	DECLARE @nro_socio_insc varchar(10);
-	DECLARE @id_factura_insc INT;
-	DECLARE @monto_insc NUMERIC(15,2);
-	DECLARE @id_membresia_insc int;
+	DECLARE
+		@nro_socio_insc varchar(10),
+		@id_factura_insc INT,
+		@monto_insc NUMERIC(15,2);
 
+
+
+    -- Validar que la fecha no sea nula
+    IF @fecha_inscripcion IS NULL
+    BEGIN
+        RAISERROR('Debe especificar una fecha de inscripción', 16, 1);
+        RETURN;
+    END
 
     -- Validar existencia del socio
-    IF NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio)
+	SELECT @nro_socio_insc = nro_socio
+	from socio.socio 
+	where id_socio = @id_socio;
+    
+	IF @nro_socio_insc is NULL
     BEGIN
         RAISERROR('Socio no encontrado', 16, 1);
         RETURN;
     END
 
     -- Validar existencia de la actividad
-    IF NOT EXISTS (SELECT 1 FROM actividad.actividad WHERE id_actividad = @id_actividad)
+	SELECT @monto_insc = costo_mensual
+	from actividad.actividad
+	where id_actividad = @id_actividad;
+	
+    IF @monto_insc IS NULL
     BEGIN
         RAISERROR('Actividad no encontrada', 16, 1);
         RETURN;
@@ -1274,20 +1290,12 @@ BEGIN
         RETURN;
     END
 
-    -- Validar que la fecha no sea nula
-    IF @fecha_inscripcion IS NULL
-    BEGIN
-        RAISERROR('Debe especificar una fecha de inscripción', 16, 1);
-        RETURN;
-    END
 	--Validar si existe la factura
+	SELECT @id_factura_insc = id_factura
+	from factura.factura_mensual
+	where nro_socio = @nro_socio_insc;
 
-	SELECT @nro_socio_insc = nro_socio from socio.socio where id_socio = @id_socio;
-	SELECT @id_factura_insc = id_factura from factura.factura_mensual where nro_socio = @nro_socio_insc;
-	SELECT @monto_insc = costo_mensual from actividad.actividad where id_actividad = @id_actividad;
-
-
-	if not exists ( select 1 from factura.factura_mensual where nro_socio = @nro_socio_insc)
+	if @id_factura_insc IS NULL
 	begin
 		Raiserror('No existe factura_mensual del socio inscripto',16,1);
 		return;
@@ -1296,8 +1304,15 @@ BEGIN
     -- Insertar la inscripcion con fecha
     INSERT INTO actividad.inscripcion_actividad (id_socio, id_actividad, fecha_inscripcion)
     VALUES (@id_socio, @id_actividad, @fecha_inscripcion);
-	exec factura.insertar_detalle_factura @id_factura = @id_factura_insc, @id_membresia = NULL, @id_participante = NULL, @id_reserva = NULL, @monto = @monto_insc, @fecha = @fecha_inscripcion, @id_actividad = @id_actividad;
-
+	--Insertar detalle_factura
+	EXEC factura.insertar_detalle_factura
+		@id_factura = @id_factura_insc,
+		@id_membresia = NULL,
+		@id_participante = NULL,
+		@id_reserva = NULL,
+		@monto = @monto_insc,
+		@fecha = @fecha_inscripcion,
+		@id_actividad = @id_actividad;
 END;
 GO
 
@@ -1307,21 +1322,43 @@ GO
 -- ELIMINAR INSCRIPCION ACTIVIDAD
 -- ==========================================
 CREATE or alter PROCEDURE actividad.eliminar_inscripcion_actividad
-    @id_socio INT,
-    @id_actividad INT
+    @id_inscripcion_actividad INT
 AS
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM actividad.inscripcion_actividad
-        WHERE id_socio = @id_socio AND id_actividad = @id_actividad
-    )
+	SET NOCOUNT ON;
+    
+	DECLARE 
+		@id_socio INT,
+        @id_actividad INT,
+        @fecha_inscripcion DATE,
+        @id_detalle_factura_insc INT;
+
+	SELECT
+		@id_socio = id_socio,
+        @id_actividad = id_actividad,
+        @fecha_inscripcion = fecha_inscripcion
+	FROM actividad.inscripcion_actividad
+	WHERE id_inscripcion_actividad = @id_inscripcion_actividad;
+
+	IF @id_socio IS NULL 
     BEGIN
         RAISERROR('Inscripcion no encontrada', 16, 1);
         RETURN;
     END
 
+	SELECT @id_detalle_factura_insc = id_detallefactura 
+    FROM factura.detalle_factura 
+    WHERE id_socio = @id_socio
+		AND id_actividad = @id_actividad
+		AND fecha = @fecha_inscripcion;
+
+	IF @id_detalle_factura_insc IS NOT NULL
+    BEGIN
+        EXEC factura.eliminar_detalle_factura @id_detallefactura = @id_detalle_factura_insc;
+    END
+
     DELETE FROM actividad.inscripcion_actividad
-    WHERE id_socio = @id_socio AND id_actividad = @id_actividad;
+    WHERE id_inscripcion_actividad = @id_inscripcion_actividad
 END;
 GO
 
