@@ -65,7 +65,7 @@ GO
 -- ==========================================
 -- Eliminar Detalle Factura
 -- ==========================================
-Create procedure factura.eliminar_detalle_factura (@id_detallefactura int) as
+Create or alter procedure factura.eliminar_detalle_factura (@id_detallefactura int) as
 BEGIN
 	--validaciones
 	IF NOT EXISTS (SELECT 1 FROM factura.detalle_factura WHERE id_detallefactura = @id_detallefactura) BEGIN
@@ -80,7 +80,7 @@ go
 -- ==========================================
 -- Insertar Aplica Descuento
 -- ==========================================
-Create procedure factura.insertar_aplica_descuento
+Create or alter procedure factura.insertar_aplica_descuento
 (@id_descuento int, @id_detallefactura int) as
 BEGIN
 	--validaciones
@@ -101,7 +101,7 @@ go
 -- ==========================================
 -- Eliminar Aplica Descuento
 -- ==========================================
-Create procedure factura.eliminar_aplica_descuento (@id_descuento int, @id_detallefactura int) as
+Create or alter procedure factura.eliminar_aplica_descuento (@id_descuento int, @id_detallefactura int) as
 BEGIN
 	--validaciones
 	IF NOT EXISTS (SELECT 1 FROM factura.descuento WHERE id_descuento = @id_descuento) or
@@ -117,7 +117,7 @@ go
 -- ==========================================
 -- Insertar Medio de Pago
 -- ==========================================
-Create procedure factura.insertar_medio_de_pago (@nombre varchar(50)) as
+Create or alter procedure factura.insertar_medio_de_pago (@nombre varchar(50)) as
 BEGIN
 	--validaciones
 	IF @nombre is NULL or ltrim(rtrim(@nombre)) = ''
@@ -134,7 +134,7 @@ go
 -- ==========================================
 -- Modificar Medio de Pago
 -- ==========================================
-Create procedure factura.modificar_medio_de_pago (@nombre varchar(50), @id int) as
+Create or alter procedure factura.modificar_medio_de_pago (@nombre varchar(50), @id int) as
 BEGIN
 	--validaciones
 	IF @nombre is NULL or ltrim(rtrim(@nombre)) = ''
@@ -152,7 +152,7 @@ go
 -- ==========================================
 -- Elimianr Medio de Pago
 -- ==========================================
-Create procedure factura.eliminar_medio_de_pago (@id int) as
+Create or alter procedure factura.eliminar_medio_de_pago (@id int) as
 BEGIN
 	--validaciones
 	IF @id is NULL
@@ -173,7 +173,7 @@ go
 -- ==========================================
 -- Insertar Descuento
 -- ==========================================
-Create procedure factura.insertar_descuento
+Create or alter procedure factura.insertar_descuento
 (@nombre nvarchar(50), @porcentaje numeric(5,2)) as
 BEGIN
 	--validaciones
@@ -196,7 +196,7 @@ go
 -- ==========================================
 -- Modificar Descuento
 -- ==========================================
-Create procedure factura.modificar_descuento
+Create or alter procedure factura.modificar_descuento
 (@id_descuento int, @nombre nvarchar(50), @porcentaje numeric(5,2)) as
 BEGIN
 	--validaciones
@@ -229,7 +229,7 @@ go
 -- ==========================================
 -- Eliminar Descuento
 -- ==========================================
-Create procedure factura.eliminar_descuento (@id int) as
+Create or alter procedure factura.eliminar_descuento (@id int) as
 BEGIN
 	--validaciones
 	IF @id is NULL
@@ -362,7 +362,8 @@ BEGIN
     SET total = @total
     WHERE id_factura = @id_factura;
 END;
-
+go
+/*
 EXEC factura.generar_factura_mensual @mes = 5, @anio = 2025, @nro_socio = 'SN-4153';
 select * from socio.socio
 SELECT * 
@@ -373,10 +374,11 @@ WHERE nro_socio = 'SN-4046'
   SELECT * 
 FROM factura.detalle_factura 
 WHERE id_factura = 1;
+*/
 -- ==========================================
 -- Modificar Factura Mensual
 -- ==========================================
-Create procedure factura.modificar_factura_mensual 
+Create or alter procedure factura.modificar_factura_mensual 
 (@id int, @fecha_emision date, @fecha_vencimiento date, @estado varchar(20), @total numeric(15,2)) as
 BEGIN
 	--validaciones
@@ -399,7 +401,7 @@ go
 -- ==========================================
 -- Eliminar Factura Mensual
 -- ==========================================
-Create procedure factura.eliminicar_factura_mensual (@id int) as
+Create or alter procedure factura.eliminicar_factura_mensual (@id int) as
 BEGIN
 	--validaciones
 	IF @id is NULL
@@ -562,7 +564,7 @@ GO
 -- ==========================================
 -- Eliminar Pago
 -- ==========================================
-Create procedure factura.eliminicar_pago (@id int) as
+Create or alter procedure factura.eliminicar_pago (@id int) as
 BEGIN
 	
 	IF @id is NULL
@@ -631,7 +633,7 @@ go
 -- ==========================================
 -- Modificar Socio
 -- ==========================================
-CREATE PROCEDURE socio.modificar_socio
+CREATE or alter PROCEDURE socio.modificar_socio
     @id_socio INT,
     @email VARCHAR(100),
     @telefono_contacto VARCHAR(20),
@@ -665,7 +667,7 @@ GO
 -- ==========================================
 -- Eliminar Socio
 -- ==========================================
-CREATE PROCEDURE socio.eliminar_socio
+CREATE or alter PROCEDURE socio.eliminar_socio
     @id_socio INT
 AS
 BEGIN
@@ -682,7 +684,7 @@ GO
 -- ==========================================
 -- Insertar Cuenta
 -- ==========================================
-CREATE PROCEDURE socio.insertar_cuenta
+CREATE or alter PROCEDURE socio.insertar_cuenta
     @usuario VARCHAR(50),
     @contrasenia VARCHAR(50),
     @rol VARCHAR(50),
@@ -751,7 +753,7 @@ GO
 -- ==========================================
 -- Eliminar Cuenta
 -- ==========================================
-CREATE PROCEDURE socio.eliminar_cuenta
+CREATE or alter PROCEDURE socio.eliminar_cuenta
     @id_usuario INT
 AS
 BEGIN
@@ -768,7 +770,7 @@ GO
 -- ==========================================
 -- Insertar Grupo Familiar
 -- ==========================================
-CREATE PROCEDURE socio.insertar_grupo_familiar
+CREATE or alter PROCEDURE socio.insertar_grupo_familiar
     @nombre VARCHAR(50),
     @apellido VARCHAR(50),
     @dni VARCHAR(10),
@@ -801,7 +803,7 @@ GO
 -- ==========================================
 -- Modificar grupo familiar
 -- ==========================================
-CREATE PROCEDURE socio.modificar_grupo_familiar
+CREATE or alter PROCEDURE socio.modificar_grupo_familiar
     @id_grupo_familiar INT,
     @email VARCHAR(50),
     @telefono VARCHAR(20),
@@ -825,7 +827,7 @@ GO
 -- ==========================================
 -- Eliminar grupo familiar
 -- ==========================================
-CREATE PROCEDURE socio.eliminar_grupo_familiar
+CREATE or alter PROCEDURE socio.eliminar_grupo_familiar
     @id_grupo_familiar INT
 AS
 BEGIN
@@ -843,7 +845,7 @@ GO
 -- ==========================================
 -- Insertar membresía
 -- ==========================================
-CREATE PROCEDURE socio.insertar_membresia
+CREATE or alter PROCEDURE socio.insertar_membresia
     @id_socio INT,
     @fecha_inicio DATE,
     @fecha_renovada DATE,
@@ -877,7 +879,7 @@ GO
 -- ==========================================
 -- Modificar membresía
 -- ==========================================
-CREATE PROCEDURE socio.modificar_membresia
+CREATE or alter PROCEDURE socio.modificar_membresia
     @id_membresia INT,
     @fecha_renovada DATE,
     @fecha_fin DATE,
@@ -917,7 +919,7 @@ GO
 -- ==========================================
 -- Eliminar membresía
 -- ==========================================
-CREATE PROCEDURE socio.eliminar_membresia
+CREATE or alter PROCEDURE socio.eliminar_membresia
     @id_membresia INT
 AS
 BEGIN
@@ -934,7 +936,7 @@ GO
 -- ==========================================
 -- Insertar categoría de socio
 -- ==========================================
-CREATE PROCEDURE socio.insertar_categoria_socio
+CREATE or alter PROCEDURE socio.insertar_categoria_socio
     @nombre VARCHAR(50),
     @costo INT,
 	@fecha_vigencia date
@@ -959,7 +961,7 @@ GO
 -- ==========================================
 -- Modificar categoría de socio
 -- ==========================================
-CREATE PROCEDURE socio.modificar_categoria_socio
+CREATE or alter PROCEDURE socio.modificar_categoria_socio
     @nombre VARCHAR(50),
 	@fecha_vigencia date,
     @costo INT
@@ -981,7 +983,7 @@ GO
 -- ==========================================
 -- Eliminar categoría de socio
 -- ==========================================
-CREATE PROCEDURE socio.eliminar_categoria_socio
+CREATE or alter PROCEDURE socio.eliminar_categoria_socio
     @nombre VARCHAR(50)
 AS
 BEGIN
@@ -999,7 +1001,7 @@ GO
 -- ==========================================
 --   INSERTAR ACTIVIDAD
 -- ==========================================
-CREATE PROCEDURE actividad.insertar_actividad
+CREATE or alter PROCEDURE actividad.insertar_actividad
     @nombre VARCHAR(50),
     @costo_mensual NUMERIC(15,2),
 	@fecha_vigencia date
@@ -1047,7 +1049,7 @@ GO
 -- ==========================================
 --  ELIMINAR ACTIVIDAD
 -- ==========================================
-CREATE PROCEDURE actividad.eliminar_actividad
+CREATE or alter PROCEDURE actividad.eliminar_actividad
     @id INT
 AS
 BEGIN
@@ -1064,7 +1066,7 @@ GO
 -- ==========================================
 -- INSERTAR ACTIVIDAD EXTRA
 -- ==========================================
-CREATE PROCEDURE actividad.insertar_actividad_extra
+CREATE or alter PROCEDURE actividad.insertar_actividad_extra
     @nombre VARCHAR(50),
     @costo_socio NUMERIC(15,2),
     @costo_invitado NUMERIC(15,2),
@@ -1091,7 +1093,7 @@ GO
 -- ==========================================
 --MODIFICAR ACTIVIDAD EXTRA
 -- ==========================================
-CREATE PROCEDURE actividad.modificar_actividad_extra
+CREATE or alter PROCEDURE actividad.modificar_actividad_extra
     @id INT,
     @nombre VARCHAR(50),
     @costo_socio NUMERIC(15,2),
@@ -1129,7 +1131,7 @@ GO
 -- ==========================================
 -- ELIMINAR ACTIVIDAD EXTRA
 -- ==========================================
-CREATE PROCEDURE actividad.eliminar_actividad_extra
+CREATE or alter PROCEDURE actividad.eliminar_actividad_extra
     @id INT
 AS
 BEGIN
@@ -1148,7 +1150,7 @@ GO
 -- ==========================================
 -- INSERTAR INSCRIPCION ACTIVIDAD
 -- ==========================================
-CREATE PROCEDURE actividad.insertar_inscripcion_actividad
+CREATE or alter PROCEDURE actividad.insertar_inscripcion_actividad
     @id_socio INT,
     @id_actividad INT,
     @fecha_inscripcion DATE
@@ -1198,7 +1200,7 @@ GO
 -- ==========================================
 -- ELIMINAR INSCRIPCION ACTIVIDAD
 -- ==========================================
-CREATE PROCEDURE actividad.eliminar_inscripcion_actividad
+CREATE or alter PROCEDURE actividad.eliminar_inscripcion_actividad
     @id_socio INT,
     @id_actividad INT
 AS
@@ -1221,7 +1223,7 @@ GO
 -- ==========================================
 -- MODIFICAR INSCRIPCION ACTIVIDAD
 -- ==========================================
-CREATE PROCEDURE actividad.modificar_inscripcion_actividad
+CREATE or alter PROCEDURE actividad.modificar_inscripcion_actividad
     @id_socio INT,
     @id_actividad INT,
     @fecha_inscripcion DATE
@@ -1409,7 +1411,7 @@ GO
 -- ==========================================
 -- INSERTAR RESERVA DE SUM
 -- ==========================================
-CREATE PROCEDURE actividad.insertar_reserva_sum
+CREATE or alter PROCEDURE actividad.insertar_reserva_sum
     @id_socio INT,
     @id_actividad_extra INT,
     @fecha_reserva DATE
@@ -1449,7 +1451,7 @@ GO
 -- ==========================================
 -- MODFICAR RESERVA DE SUM
 -- ==========================================
-CREATE PROCEDURE actividad.modificar_reserva_sum
+CREATE or alter PROCEDURE actividad.modificar_reserva_sum
     @id_reserva INT,
     @id_socio INT,
     @id_actividad_extra INT,
@@ -1501,7 +1503,7 @@ GO
 -- ==========================================
 -- ELIMINAR RESERVA DE SUM
 -- ==========================================
-CREATE PROCEDURE actividad.eliminar_reserva_sum
+CREATE or alter PROCEDURE actividad.eliminar_reserva_sum
     @id_reserva INT
 AS
 BEGIN
@@ -1518,7 +1520,7 @@ GO
 -- ==========================================
 --  INSERTAR PARTICIPANTE
 -- ==========================================
-CREATE PROCEDURE actividad.insertar_participante_actividad_extra
+CREATE or alter PROCEDURE actividad.insertar_participante_actividad_extra
     @id_socio INT,
     @id_actividad_extra INT,
     @tipo_participante VARCHAR(1)
@@ -1551,7 +1553,7 @@ GO
 -- ==========================================
 --  MODIFICAR PARTICIPANTE
 -- ==========================================
-CREATE PROCEDURE actividad.modificar_participante_actividad_extra
+CREATE or alter PROCEDURE actividad.modificar_participante_actividad_extra
     @id_participante INT,
     @id_socio INT,
     @id_actividad_extra INT,
@@ -1594,7 +1596,7 @@ GO
 -- ==========================================
 --  ELIMINAR PARTICIPANTE
 -- ==========================================
-CREATE PROCEDURE actividad.eliminar_participante_actividad_extra
+CREATE or alter PROCEDURE actividad.eliminar_participante_actividad_extra
     @id_participante INT
 AS
 BEGIN
@@ -1608,9 +1610,9 @@ BEGIN
     WHERE id_participante = @id_participante;
 END;
 GO
-=======================================
+--=======================================
 --DETALLE FACTURA
-===================
+--===================
 CREATE OR ALTER PROCEDURE factura.ver_detalle_factura
     @id_factura INT
 AS
