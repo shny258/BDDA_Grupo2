@@ -250,9 +250,9 @@ go
 -- Insertar Factura Mensual
 -- ==========================================
 CREATE OR ALTER PROCEDURE factura.generar_factura_mensual
-    @mes INT,
+    (@mes INT,
     @anio INT,
-    @nro_socio VARCHAR(10)
+    @nro_socio VARCHAR(10))
 AS
 BEGIN
     SET NOCOUNT ON;

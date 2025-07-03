@@ -11,13 +11,12 @@
 --Contti Abel  DNI:394878489  
 --Martins Louro  Luciano DNI:42364189  
 
-
-create database Com5600G02;
+if not exists (select name from sys.databases where name = 'Com5600G02')
+	create database Com5600G02 COLLATE Modern_Spanish_CI_AS;
 
 go
 
 use Com5600G02;
-
 go
 
 DROP TABLE IF EXISTS factura.aplica_descuento;
@@ -40,8 +39,7 @@ DROP TABLE IF EXISTS factura.medio_de_pago;
 DROP TABLE IF EXISTS socio.cuenta;
 
 go
-use Com5600G02;
-go
+
 IF NOT EXISTS (SELECT * FROM  sys.schemas WHERE name = 'socio')
     EXEC('CREATE SCHEMA socio');
 go
