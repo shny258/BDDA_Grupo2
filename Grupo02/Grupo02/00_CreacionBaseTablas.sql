@@ -13,15 +13,47 @@
 
 
 create database Com5600G02;
+
+go
+
+use Com5600G02;
+
+go
+
+DROP TABLE IF EXISTS factura.aplica_descuento;
+DROP TABLE IF EXISTS factura.pago;
+DROP TABLE IF EXISTS factura.detalle_factura;
+DROP TABLE IF EXISTS actividad.presentismo;
+DROP TABLE IF EXISTS actividad.reserva_sum;
+DROP TABLE IF EXISTS actividad.participante_actividad_extra;
+DROP TABLE IF EXISTS actividad.inscripcion_actividad;
+DROP TABLE IF EXISTS factura.factura_mensual;
+DROP TABLE IF EXISTS factura.descuento;
+DROP TABLE IF EXISTS socio.membresia;
+DROP TABLE IF EXISTS actividad.actividad_extra;
+DROP TABLE IF EXISTS actividad.actividad;
+DROP TABLE IF EXISTS socio.empleado;
+DROP TABLE IF EXISTS socio.socio;
+DROP TABLE IF EXISTS socio.grupo_familiar;
+DROP TABLE IF EXISTS socio.categoria_socio;
+DROP TABLE IF EXISTS factura.medio_de_pago;
+DROP TABLE IF EXISTS socio.cuenta;
+
 go
 use Com5600G02;
 go
-create schema socio; 
+IF NOT EXISTS (SELECT * FROM  sys.schemas WHERE name = 'socio')
+    EXEC('CREATE SCHEMA socio');
 go
-create schema actividad;
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'actividad')
+    EXEC('CREATE SCHEMA actividad');
 go
-create schema factura;
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'factura')
+    EXEC('CREATE SCHEMA factura');
 go
+
 -- Tabla de usuarios del sistema 
 CREATE TABLE socio.cuenta (
     id_usuario int identity (1,1) PRIMARY KEY,
