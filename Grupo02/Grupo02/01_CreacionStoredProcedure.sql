@@ -291,18 +291,24 @@ BEGIN
         RETURN;
     END
 
-    -- Obtener grupo familiar del socio responsable
-    SELECT @id_grupo = id_grupo_familiar FROM socio.socio WHERE nro_socio = @nro_socio_facturar;
-    IF @id_grupo IS NULL
-    BEGIN
-        RAISERROR('Socio responsable sin grupo familiar asignado.', 16, 1);
-        RETURN;
-    END
-
-    -- Obtener socios del grupo familiar
-    DECLARE @socios TABLE (id_socio INT);
-    INSERT INTO @socios (id_socio)
-    SELECT id_socio FROM socio.socio WHERE id_grupo_familiar = @id_grupo;
+			-- Obtener grupo familiar del socio responsable (puede ser NULL)
+		SELECT @id_grupo = id_grupo_familiar FROM socio.socio WHERE nro_socio = @nro_socio_facturar;
+ 
+		-- Crear tabla de socios a facturar
+		DECLARE @socios TABLE (id_socio INT);
+ 
+		IF @id_grupo IS NOT NULL
+		BEGIN
+			-- Facturar a todos los del grupo
+			INSERT INTO @socios (id_socio)
+			SELECT id_socio FROM socio.socio WHERE id_grupo_familiar = @id_grupo;
+		END
+		ELSE
+		BEGIN
+			-- Facturar solo al socio individual
+			INSERT INTO @socios (id_socio)
+			SELECT id_socio FROM socio.socio WHERE nro_socio = @nro_socio_facturar;
+		END
 
     -- Insertar factura a nombre del socio responsable
     INSERT INTO factura.factura_mensual (
