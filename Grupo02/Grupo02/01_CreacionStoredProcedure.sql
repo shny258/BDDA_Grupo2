@@ -1289,7 +1289,7 @@ BEGIN
     -- Validar si ya esta inscripto
     IF EXISTS (
         SELECT 1 FROM actividad.inscripcion_actividad
-        WHERE id_socio = @id_socio AND id_actividad = @id_actividad
+        WHERE id_socio = @id_socio AND id_actividad = @id_actividad AND fecha_inscripcion = @fecha_inscripcion
     )
     BEGIN
         RAISERROR('El socio ya está inscripto en la actividad', 16, 1);
@@ -1297,9 +1297,10 @@ BEGIN
     END
 
 	--Validar si existe la factura
-	SELECT @id_factura_insc = id_factura
+	SELECT TOP 1 @id_factura_insc = id_factura
 	from factura.factura_mensual
-	where nro_socio = @nro_socio_insc;
+	where nro_socio = @nro_socio_insc
+	ORDER BY fecha_emision DESC;
 
 	if @id_factura_insc IS NULL
 	begin
