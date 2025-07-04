@@ -163,6 +163,7 @@ CREATE TABLE factura.factura_mensual (
     estado VARCHAR(20) DEFAULT 'Pendiente', -- Pagada / Pendiente / Anulada
     total NUMERIC(15,2),
     nro_socio VARCHAR(10),
+	total_bruto NUMERIC(15,2) NULL,
     CONSTRAINT FK_factura_nro_socio FOREIGN KEY (nro_socio)
         REFERENCES socio.socio(nro_socio)
 );
@@ -177,7 +178,8 @@ CREATE TABLE factura.detalle_factura (
     monto NUMERIC(15,2),
 	fecha date,
 	id_socio INT NULL,
-    id_actividad INT NULL
+    id_actividad INT NULL,
+	observacion VARCHAR(100) NULL    
 );
 
 -- Descuentos

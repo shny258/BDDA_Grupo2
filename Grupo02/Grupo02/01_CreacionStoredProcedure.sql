@@ -255,26 +255,23 @@ go
 -- ==========================================
 CREATE OR ALTER PROCEDURE factura.generar_factura_mensual
     (@mes INT,
-    @anio INT,
-    @nro_socio VARCHAR(10))
+     @anio INT,
+     @nro_socio VARCHAR(10))
 AS
 BEGIN
     SET NOCOUNT ON;
 
     DECLARE @total NUMERIC(15,2) = 0;
+    DECLARE @total_bruto NUMERIC(15,2) = 0;
     DECLARE @id_factura INT;
     DECLARE @id_grupo INT;
     DECLARE @fecha_emision DATE = DATEFROMPARTS(@anio, @mes, 1);
-
-    -- Fecha que representa el mes y año de la facturación (primer día del mes)
-    DECLARE @fecha_facturacion DATE = DATEFROMPARTS(@anio, @mes, 1);
-
-    -- Calcular el último día real del mes para evitar errores de fecha inválida
+    DECLARE @fecha_facturacion DATE = @fecha_emision;
     DECLARE @ultimo_dia_mes INT = DAY(EOMONTH(@fecha_facturacion));
-
-    -- Obtener socio real para facturar (si tiene responsable, usar responsable)
     DECLARE @nro_socio_facturar VARCHAR(10);
+    DECLARE @es_familiar BIT = 0;
 
+    -- Obtener socio responsable
     SELECT @nro_socio_facturar = 
         CASE WHEN nro_socio_rp IS NOT NULL AND nro_socio_rp <> ''
              THEN nro_socio_rp
@@ -289,7 +286,7 @@ BEGIN
         RETURN;
     END
 
-    -- Validar existencia previa de factura para socio responsable
+    -- Validar factura duplicada
     IF EXISTS (
         SELECT 1 FROM factura.factura_mensual
         WHERE MONTH(fecha_emision) = @mes AND YEAR(fecha_emision) = @anio AND nro_socio = @nro_socio_facturar
@@ -299,29 +296,28 @@ BEGIN
         RETURN;
     END
 
-    -- Obtener grupo familiar del socio responsable (puede ser NULL)
+    -- Verificar si es familiar
     SELECT @id_grupo = id_grupo_familiar FROM socio.socio WHERE nro_socio = @nro_socio_facturar;
-
-    -- Crear tabla de socios a facturar
-    DECLARE @socios TABLE (id_socio INT);
-
     IF @id_grupo IS NOT NULL
+        SET @es_familiar = 1;
+
+    -- Tabla temporal de socios
+    DECLARE @socios TABLE (id_socio INT);
+    IF @es_familiar = 1
     BEGIN
-        -- Facturar a todos los del grupo
         INSERT INTO @socios (id_socio)
         SELECT id_socio FROM socio.socio WHERE id_grupo_familiar = @id_grupo;
     END
     ELSE
     BEGIN
-        -- Facturar solo al socio individual
         INSERT INTO @socios (id_socio)
         SELECT id_socio FROM socio.socio WHERE nro_socio = @nro_socio_facturar;
     END
 
-    -- Insertar factura a nombre del socio responsable
+    -- Crear factura
     INSERT INTO factura.factura_mensual (
         fecha_emision, fecha_vencimiento, segunda_fecha_vencimiento,
-        estado, total, nro_socio
+        estado, total, total_bruto, nro_socio
     )
     VALUES (
         @fecha_emision,
@@ -329,50 +325,98 @@ BEGIN
         DATEFROMPARTS(@anio, @mes, 20),
         'Pendiente',
         0,
+        0,
         @nro_socio_facturar
     );
 
     SET @id_factura = SCOPE_IDENTITY();
 
-    -- Insertar detalles por categoría (membresía)
+    -- === Insertar membresías ===
     INSERT INTO factura.detalle_factura (
-        id_factura, id_membresia, id_participante, id_reserva, monto, fecha, id_socio, id_actividad
+        id_factura, id_membresia, id_participante, id_reserva,
+        monto, fecha, id_socio, id_actividad, observacion
     )
     SELECT
         @id_factura,
         NULL, NULL, NULL,
-        cs.costo,
+        CASE 
+            WHEN @es_familiar = 1 THEN cs.costo * 0.85
+            ELSE cs.costo
+        END,
         @fecha_facturacion,
         s.id_socio,
-        NULL
+        NULL,
+        CASE 
+            WHEN @es_familiar = 1 THEN 'Descuento 15% grupo familiar'
+            ELSE NULL
+        END
     FROM @socios s
     JOIN socio.socio so ON s.id_socio = so.id_socio
     JOIN socio.categoria_socio cs ON so.id_categoria = cs.nombre;
 
-    -- Insertar detalles por actividades (solo para socios que tienen actividades)
+    -- === Insertar actividades ===
     INSERT INTO factura.detalle_factura (
-        id_factura, id_membresia, id_participante, id_reserva, monto, fecha, id_socio, id_actividad
+        id_factura, id_membresia, id_participante, id_reserva,
+        monto, fecha, id_socio, id_actividad, observacion
     )
     SELECT
         @id_factura,
         NULL, NULL, NULL,
-        a.costo_mensual,
+        CASE 
+            WHEN (
+                SELECT COUNT(*) 
+                FROM actividad.inscripcion_actividad ia2
+                WHERE ia2.id_socio = s.id_socio 
+                  AND ia2.fecha_inscripcion <= @fecha_facturacion
+            ) > 1
+            THEN a.costo_mensual * 0.9
+            ELSE a.costo_mensual
+        END,
         @fecha_facturacion,
         s.id_socio,
-        a.id_actividad
+        a.id_actividad,
+        CASE 
+            WHEN @es_familiar = 1 AND (
+                SELECT COUNT(*) 
+                FROM actividad.inscripcion_actividad ia2
+                WHERE ia2.id_socio = s.id_socio 
+                  AND ia2.fecha_inscripcion <= @fecha_facturacion
+            ) > 1
+                THEN 'Descuento 15% grupo familiar y 10% por múltiples actividades'
+            WHEN (
+                SELECT COUNT(*) 
+                FROM actividad.inscripcion_actividad ia2
+                WHERE ia2.id_socio = s.id_socio 
+                  AND ia2.fecha_inscripcion <= @fecha_facturacion
+            ) > 1
+                THEN 'Descuento 10% por múltiples actividades'
+            ELSE NULL
+        END
     FROM @socios s
     JOIN actividad.inscripcion_actividad ia ON s.id_socio = ia.id_socio
     JOIN actividad.actividad a ON ia.id_actividad = a.id_actividad
-    WHERE ia.fecha_inscripcion <= DATEFROMPARTS(@anio, @mes, @ultimo_dia_mes);
+    WHERE ia.fecha_inscripcion <= @fecha_facturacion;
 
-    -- Calcular total sumando todos los montos de detalle
+    -- Calcular total con descuentos
     SELECT @total = SUM(monto)
     FROM factura.detalle_factura
     WHERE id_factura = @id_factura;
 
-    -- Actualizar total en la factura mensual
+    -- Calcular total sin descuentos (bruto)
+    SELECT @total_bruto = SUM(
+        CASE 
+            WHEN observacion LIKE '%15%' THEN monto / 0.85
+            WHEN observacion LIKE '%10%' THEN monto / 0.9
+            ELSE monto
+        END
+    )
+    FROM factura.detalle_factura
+    WHERE id_factura = @id_factura;
+
+    -- Actualizar factura con totales
     UPDATE factura.factura_mensual
-    SET total = @total
+    SET total = @total,
+        total_bruto = @total_bruto
     WHERE id_factura = @id_factura;
 END;
 GO
@@ -381,8 +425,8 @@ GO
     -- Actualizar total en
 
 /*
-EXEC factura.generar_factura_mensual @mes = 7, @anio = 2025, @nro_socio = 'SN-4030';
-select * from socio.socio
+EXEC factura.generar_factura_mensual @mes = 8, @anio = 2025, @nro_socio = 'SN-4130';
+select * from socio.socio order by id_grupo_familiar
 SELECT * 
 FROM factura.factura_mensual  
 WHERE nro_socio = 'SN-4022' 
@@ -1808,53 +1852,53 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Validar factura
+    -- Validar existencia
     IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura)
     BEGIN
         RAISERROR('Factura no encontrada.', 16, 1);
         RETURN;
     END
 
-    -- Obtener nro_socio responsable de la factura
-    DECLARE @nro_socio VARCHAR(10);
-    SELECT @nro_socio = nro_socio 
+    -- Mostrar encabezado con total y total bruto
+    SELECT 
+        id_factura, 
+        nro_socio, 
+        fecha_emision, 
+        total_bruto, 
+        total
     FROM factura.factura_mensual 
     WHERE id_factura = @id_factura;
 
-    -- Mostrar encabezado factura (mejor evitar SELECT *)
-    SELECT id_factura, nro_socio, fecha_emision, total
-    FROM factura.factura_mensual 
-    WHERE id_factura = @id_factura;
-
-    -- Mostrar detalle de cargos con socio, categoría y actividad
+    -- Mostrar detalle con observación y descuento aplicado
     SELECT
         s.nro_socio,
         s.nombre + ' ' + s.apellido AS socio,
         cs.nombre AS categoria,
         a.nombre AS actividad,
         df.monto,
-        df.fecha
+        df.fecha,
+        df.observacion,
+        -- Descuento aplicado (calculado según observación)
+        CAST(
+            CASE 
+                WHEN df.observacion LIKE '%15% y 10%' THEN df.monto / (0.85 * 0.9) - df.monto
+                WHEN df.observacion LIKE '%15%' THEN df.monto / 0.85 - df.monto
+                WHEN df.observacion LIKE '%10%' THEN df.monto / 0.9 - df.monto
+                ELSE 0
+            END AS NUMERIC(10,2)
+        ) AS descuento_aplicado
     FROM factura.detalle_factura df
     LEFT JOIN socio.socio s ON df.id_socio = s.id_socio
-LEFT JOIN socio.categoria_socio cs ON s.id_categoria = cs.nombre
+    LEFT JOIN socio.categoria_socio cs ON s.id_categoria = cs.nombre
     LEFT JOIN actividad.actividad a ON df.id_actividad = a.id_actividad
     WHERE df.id_factura = @id_factura
     ORDER BY s.nro_socio, s.nombre + ' ' + s.apellido, cs.nombre, a.nombre;
-END
+END;
+GO
 
 
 
 
-SELECT 
-    s.nro_socio,
-    s.nombre,
-    s.apellido,
-    a.id_actividad,
-    a.nombre AS actividad,
-    a.costo_mensual,
-    ia.fecha_inscripcion
-FROM socio.socio s
-JOIN actividad.inscripcion_actividad ia ON s.id_socio = ia.id_socio
-JOIN actividad.actividad a ON ia.id_actividad = a.id_actividad
-ORDER BY s.nro_socio, s.apellido, s.nombre, ia.fecha_inscripcion;
+--exec factura.ver_detalle_factura @id_factura='1569'
+
 
