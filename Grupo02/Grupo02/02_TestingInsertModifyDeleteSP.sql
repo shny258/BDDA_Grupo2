@@ -107,50 +107,6 @@ EXEC socio.eliminar_categoria_socio @nombre = 'mayor';
 EXEC socio.eliminar_categoria_socio @nombre = 'noexiste';
 
 -- ==========================================
--- Pruebas para grupo_familiar
--- ==========================================
-
---  INSERTAR GRUPO FAMILIAR - CORRECTO
-EXEC socio.insertar_grupo_familiar 
-    @nombre = 'Lucía', 
-    @apellido = 'Gómez', 
-    @dni = '23156789', 
-    @email = 'lucia@example.com', 
-    @fecha_nacimiento = '2010-06-15', 
-    @telefono = '1144556677', 
-    @parentesco = 'Hija';
-
---  INSERTAR GRUPO FAMILIAR - ERROR (DNI repetido o demasiado corto)
-EXEC socio.insertar_grupo_familiar 
-    @nombre = 'Lucía', 
-    @apellido = 'Gómez', 
-    @dni = '1234', 
-    @email = 'lucia@example.com', 
-    @fecha_nacimiento = '2010-06-15', 
-    @telefono = '1144556677', 
-    @parentesco = 'Hija';
-
---  MODIFICAR GRUPO FAMILIAR - CORRECTO (usar id valido, ej: 1)
-EXEC socio.modificar_grupo_familiar 
-    @id_grupo_familiar = 1,
-    @email = 'lucia.actualizada@example.com',
-    @telefono = '1166778899',
-    @parentesco = 'Hija actualizada';
-
---  MODIFICAR GRUPO FAMILIAR - ERROR (id inexistente)
-EXEC socio.modificar_grupo_familiar 
-    @id_grupo_familiar = 9999,
-    @email = 'error@example.com',
-    @telefono = '0000000000',
-    @parentesco = 'Error';
-
---  ELIMINAR GRUPO FAMILIAR - CORRECTO (usar id valido, ej: 1)
-EXEC socio.eliminar_grupo_familiar @id_grupo_familiar = 1;
-
---  ELIMINAR GRUPO FAMILIAR - ERROR (id inexistente)
-EXEC socio.eliminar_grupo_familiar @id_grupo_familiar = 9999;
-
--- ==========================================
 -- Pruebas para actividad
 -- ==========================================
 
@@ -189,35 +145,6 @@ EXEC actividad.eliminar_actividad @id = 999;
 -- ==========================================
 -- Pruebas para factura_mensual
 -- ==========================================
---  INSERTAR FACTURA MENSUAL - CORRECTO
-EXEC factura.insertar_factura_mensual 
-    @fecha_emision = '2025-05-01', 
-    @fecha_vencimiento = '2025-05-31', 
-    @estado = 'pendiente', 
-    @total = 15000;
-
---  INSERTAR FACTURA MENSUAL - ERROR (monto negativo)
-EXEC factura.insertar_factura_mensual 
-    @fecha_emision = '2025-05-01', 
-    @fecha_vencimiento = '2025-05-31', 
-    @estado = 'pendiente', 
-    @total = -100;
-
---  MODIFICAR FACTURA MENSUAL - CORRECTO (usar ID existente, ej: 1)
-EXEC factura.modificar_factura_mensual 
-    @id = 1,
-    @fecha_emision = '2025-05-02', 
-    @fecha_vencimiento = '2025-06-01', 
-    @estado = 'pagado', 
-    @total = 16000;
-
---  MODIFICAR FACTURA MENSUAL - ERROR (ID inexistente)
-EXEC factura.modificar_factura_mensual 
-    @id = 9999,
-    @fecha_emision = '2025-05-02', 
-    @fecha_vencimiento = '2025-06-01', 
-    @estado = 'pagado', 
-    @total = 16000;
 
 --  ELIMINAR FACTURA MENSUAL - CORRECTO (usar ID existente, ej: 1)
 EXEC factura.eliminicar_factura_mensual @id = 1;
@@ -252,36 +179,36 @@ EXEC factura.eliminar_descuento @id = 9999;
 -- ==========================================
 
 --  INSERTAR SOCIO - CORRECTO
-EXEC socio.insertar_socio 
-	@nro_socio = 'sn-2001',
-    @dni = '12345478',
-    @nombre = 'Juan',
-    @apellido = 'Perez',
-    @email = 'juan@example.com',
-    @fecha_nacimiento = '2000-01-01',
-    @telefono_contacto = '1122334455',
-    @telefono_emergencia = '1199887766',
+EXEC socio.insertar_socio
+    @nro_socio = 'SN-1000',
+    @dni = '40000111',
+    @nombre = 'Ana',
+    @apellido = 'López',
+    @email = 'ana@example.com',
+    @fecha_nacimiento = '1980-05-10',
+    @telefono_contacto = '11111111',
+    @telefono_emergencia = '22222222',
     @cobertura_medica = 'OSDE',
-    @nro_cobertura_medica = '12345',
+    @nro_cobertura_medica = '12345678',
     @id_medio_de_pago = 1,
-    @id_grupo_familiar = 1,
-	@nro_socio_rp = NULL;
-	SELECT * FROM  socio.socio
---  INSERTAR SOCIO - ERROR (nombre vacio)
-EXEC socio.insertar_socio 
-	@nro_socio = 'sn-2002',
-    @dni = '12345679',
-    @nombre = '',
-    @apellido = 'Perez',
-    @email = 'juan@example.com',
-    @fecha_nacimiento = '2000-01-01',
-    @telefono_contacto = '1122334455',
-    @telefono_emergencia = '1199887766',
-    @cobertura_medica = 'OSDE',
-    @nro_cobertura_medica = '12345',
+    @nro_socio_rp = NULL,
+    @categoria_ingresada = 'Mayor';
+
+--  INSERTAR SOCIO - ERROR (Cadete sin responsable)
+EXEC socio.insertar_socio
+    @nro_socio = 'SN-1004',
+    @dni = '40000555',
+    @nombre = 'Lucas',
+    @apellido = 'Fernández',
+    @email = 'lucas@example.com',
+    @fecha_nacimiento = '2009-12-01',
+    @telefono_contacto = '99999999',
+    @telefono_emergencia = '00000000',
+    @cobertura_medica = 'OMINT',
+    @nro_cobertura_medica = '12312312',
     @id_medio_de_pago = 1,
-    @id_grupo_familiar = 1,
-    @nro_socio_rp = NULL;
+    @nro_socio_rp = NULL,  -- FALTANTE
+    @categoria_ingresada = 'Cadete';
 
 --  MODIFICAR SOCIO - CORRECTO (usar id_socio valido, ej: 1)
 EXEC socio.modificar_socio 
@@ -325,7 +252,7 @@ EXEC socio.insertar_membresia
     @fecha_renovada = '2025-05-10',
     @fecha_fin = '2025-12-31',
     @costo = 12000;
-	select * from socio.membresia
+
 
 -- INSERTAR MEMBRESIA - ERROR (fecha de renovación anterior al inicio)
 EXEC socio.insertar_membresia 
@@ -334,13 +261,6 @@ EXEC socio.insertar_membresia
     @fecha_renovada = '2025-05-01',
     @fecha_fin = '2025-12-31',
     @costo = 12000;
-
---  MODIFICAR MEMBRESIA - CORRECTO (usar id_membresia valido, ej: 1)
-EXEC socio.modificar_membresia 
-    @id_membresia = 3,
-    @fecha_renovada = '2025-06-01',
-    @fecha_fin = '2025-12-31',
-    @costo = 12500;
 
 --  MODIFICAR MEMBRESIA - ERROR (id inexistente)
 EXEC socio.modificar_membresia 
@@ -383,7 +303,7 @@ EXEC actividad.modificar_reserva_sum
     @id_reserva = 1,
     @id_socio = 1,
     @id_actividad_extra = 2,
-    @fecha_reserva = '2025-06-10';
+    @fecha_reserva = '2025-06-15';
 
 --  ELIMINAR RESERVA SUM - CORRECTO (usar ID existente)
 EXEC actividad.eliminar_reserva_sum @id_reserva = 1;
@@ -493,13 +413,11 @@ EXEC actividad.modificar_inscripcion_actividad
 
 --  Eliminar INSCRIPCION ACTIVIDAD - CORRECTO (usar IDs existentes)
 EXEC actividad.eliminar_inscripcion_actividad 
-    @id_socio = 28,
-    @id_actividad = 2;
+    @id_inscripcion_actividad = 2;
 
 --  Eliminar INSCRIPCION ACTIVIDAD - ERROR (inscripcion inexistente)
 EXEC actividad.eliminar_inscripcion_actividad 
-    @id_socio = 1,
-    @id_actividad = 999;
+    @id_inscripcion_actividad = 999;
 
 
 -- ==========================================
@@ -548,7 +466,9 @@ EXEC factura.insertar_detalle_factura
     @id_factura = 1,           
     @id_membresia = 3,         
     @id_participante = NULL,   
-    @id_reserva = NULL,        
+    @id_reserva = NULL,
+	@id_socio = 1,
+	@id_actividad = NULL,
     @monto = 5000.00, 
     @fecha = '2025-05-01';
 
