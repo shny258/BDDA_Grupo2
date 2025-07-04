@@ -14,131 +14,97 @@
 -- REPORTE DE LOS SOCIOS MOROSOS (2024)
 -----------------------------------------------------------------------------
 
-DECLARE @Desde DATE = '2024-01-01';
-DECLARE @Hasta DATE = '2024-12-31';
+CREATE OR ALTER PROCEDURE factura.morosos_recurrentes
+(
+    @fecha_inicio DATE,
+    @fecha_fin DATE
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
 
-WITH Moras_CTE AS (
-    SELECT
-        f.nro_socio,
-        s.nombre,
-        s.apellido,
-        f.fecha_emision,
-        f.fecha_vencimiento,
-        p.fecha_pago,
-        CASE WHEN p.fecha_pago > f.fecha_vencimiento THEN 1 ELSE 0 END AS es_moroso
-    FROM factura.factura_mensual f
-    INNER JOIN socio.socio s 
-        ON s.nro_socio = f.nro_socio
-    LEFT JOIN factura.pago p 
-        ON p.id_factura = f.id_factura
-    WHERE f.fecha_emision BETWEEN @Desde AND @Hasta
-)
-, Conteo_Moras AS (
-    SELECT
-        nro_socio,
-        nombre,
-        apellido,
-        fecha_emision AS mes_incumplido,
-        es_moroso,
-        SUM(es_moroso) OVER(PARTITION BY nro_socio) AS cantidad_total_moras
-    FROM Moras_CTE
-)
-, Ranking_Moras AS (
-    SELECT
-        nro_socio,
-        nombre + ' ' + apellido AS nombre_apellido,
-        mes_incumplido,
-        cantidad_total_moras,
-        DENSE_RANK() OVER (ORDER BY cantidad_total_moras DESC) AS ranking_morosidad
-    FROM Conteo_Moras
-    WHERE es_moroso = 1
-)
-SELECT
-    nro_socio,
-    nombre_apellido,
-    mes_incumplido,
-    ranking_morosidad,
-    cantidad_total_moras
-FROM Ranking_Moras
-WHERE cantidad_total_moras > 2
-ORDER BY ranking_morosidad, nro_socio, mes_incumplido;
+    WITH facturas_filtradas AS (
+        SELECT 
+            f.nro_socio,
+            s.nombre,
+            s.apellido,
+            FORMAT(f.fecha_emision, 'yyyy-MM') AS mes_incumplido,
+            ROW_NUMBER() OVER (PARTITION BY f.nro_socio, FORMAT(f.fecha_emision, 'yyyy-MM') ORDER BY f.fecha_emision) AS rn
+        FROM factura.factura_mensual f
+        JOIN socio.socio s ON f.nro_socio = s.nro_socio
+        WHERE f.fecha_emision BETWEEN @fecha_inicio AND @fecha_fin
+          AND f.estado IN ('Pendiente', 'Anulada')
+    ),
+    incumplimientos_mes AS (
+        -- Una fila por socio y mes
+        SELECT 
+            nro_socio,
+            nombre,
+            apellido,
+            mes_incumplido
+        FROM facturas_filtradas
+        WHERE rn = 1
+    ),
+    incumplimientos_totales AS (
+        -- Total incumplimientos y ranking por socio
+        SELECT
+            nro_socio,
+            COUNT(*) AS total_incumplimientos,
+            RANK() OVER (ORDER BY COUNT(*) DESC) AS ranking_morosidad
+        FROM incumplimientos_mes
+        GROUP BY nro_socio
+        HAVING COUNT(*) >= 2
+    )
+    SELECT 
+        im.nro_socio,
+        im.nombre,
+        im.apellido,
+        im.mes_incumplido,
+        it.total_incumplimientos,
+        it.ranking_morosidad
+    FROM incumplimientos_mes im
+    INNER JOIN incumplimientos_totales it ON im.nro_socio = it.nro_socio
+    ORDER BY it.ranking_morosidad, im.nro_socio, im.mes_incumplido;
+END;
+
+ 
+--Exec factura.morosos_recurrentes @fecha_inicio = '2025-01-01',  @fecha_fin = '2026-06-01'
 GO
 -----------------------------------------------------------------------------
 -- REPORTE DE INGRESOS DE ACTIVIDADES (DESDE ENERO)
 -----------------------------------------------------------------------------
--- Paso 1: Para cada socio y actividad, busco la inscripción y la última fecha en presentismo
-WITH base_inscripciones AS (
-    SELECT 
-        ia.id_socio,
-        ia.id_actividad,
-        a.nombre AS actividad,
-        a.costo_mensual,
-        ia.fecha_inscripcion,
-        DATEFROMPARTS(YEAR(MAX(p.fecha_asistencia)), MONTH(MAX(p.fecha_asistencia)), 1) AS fecha_fin
-    FROM actividad.inscripcion_actividad ia
-    JOIN actividad.actividad a ON a.id_actividad = ia.id_actividad
-    JOIN actividad.presentismo p 
-        ON p.id_socio = ia.id_socio 
-       AND p.id_actividad = ia.id_actividad
-    GROUP BY 
-        ia.id_socio, ia.id_actividad, a.nombre, a.costo_mensual, ia.fecha_inscripcion
-),
--- Paso 2: Genero los meses desde la inscripción hasta su último registro en presentismo
-meses_generados AS (
-    SELECT
-        bi.id_socio,
-        bi.id_actividad,
-        bi.actividad,
-        bi.costo_mensual,
-        DATEFROMPARTS(YEAR(bi.fecha_inscripcion), MONTH(bi.fecha_inscripcion), 1) AS mes,
-        bi.fecha_fin
-    FROM base_inscripciones bi
-    UNION ALL
-    SELECT
-        mg.id_socio,
-        mg.id_actividad,
-        mg.actividad,
-        mg.costo_mensual,
-        DATEADD(MONTH, 1, mg.mes),
-        mg.fecha_fin
-    FROM meses_generados mg
-    WHERE mg.mes < mg.fecha_fin
-)
--- Paso 3: Agrupo por mes y actividad, y calculo ingresos estimados
-SELECT
-    actividad,
-    FORMAT(mes, 'yyyy-MM') AS mes,
-    COUNT(*) * MAX(costo_mensual) AS ingreso_mensual,
-    SUM(COUNT(*) * MAX(costo_mensual)) OVER (
-        PARTITION BY actividad
-        ORDER BY mes
-        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+SELECT 
+    a.nombre AS actividad,
+    fm.fecha_emision AS mes,
+    SUM(df.monto) AS ingreso_mes,
+    SUM(SUM(df.monto)) OVER (
+        PARTITION BY a.nombre 
+        ORDER BY fm.fecha_emision
+        ROWS UNBOUNDED PRECEDING
     ) AS ingreso_acumulado
-FROM meses_generados
-GROUP BY actividad, mes
-ORDER BY actividad, mes
-OPTION (MAXRECURSION 1000);
-
+FROM factura.detalle_factura df
+JOIN factura.factura_mensual fm ON df.id_factura = fm.id_factura
+JOIN actividad.actividad a ON df.id_actividad = a.id_actividad
+WHERE df.id_actividad IS NOT NULL
+GROUP BY a.nombre, fm.fecha_emision
+ORDER BY a.nombre, mes;
 -----------------------------------------------------------------------------
 -- REPORTE DE SOCIOS AUSENTES EN SUS ACTIVIDADES
 -----------------------------------------------------------------------------
 SELECT 
-    cat.nombre AS Categoria,
-    act.nombre AS Actividad,
+    cat.nombre AS categoria,
+    act.nombre AS actividad,
     COUNT(*) AS cantidad_inasistencias
 FROM actividad.presentismo p
-JOIN socio.socio soc 
-    ON soc.id_socio = p.id_socio
-JOIN socio.categoria_socio cat 
-    ON soc.id_categoria = cat.nombre
-JOIN actividad.actividad act 
-    ON act.id_actividad = p.id_actividad
+JOIN socio.socio s ON p.id_socio = s.id_socio
+JOIN socio.categoria_socio cat ON s.id_categoria = cat.nombre
+JOIN actividad.actividad act ON p.id_actividad = act.id_actividad
 WHERE p.asistencia = 'A'
 GROUP BY cat.nombre, act.nombre
 ORDER BY cantidad_inasistencias DESC;
-GO
+
 -----------------------------------------------------------------------------
--- REPORTE DE SOCIOS AUSENTES EN SUS ACTIVIDADES
+-- REPORTE 4
 -----------------------------------------------------------------------------
 SELECT 
     soc.nombre,
@@ -165,3 +131,26 @@ AND NOT EXISTS (
       AND p2.id_socio = ins.id_socio
       AND p2.asistencia = 'P'
 );
+
+
+/*SELECT
+    a.nombre,
+    SUM(CASE WHEN MONTH(df.fecha) = 1 THEN df.monto ELSE 0 END) AS Enero,
+    SUM(CASE WHEN MONTH(df.fecha) = 2 THEN df.monto ELSE 0 END) AS Febrero,
+    SUM(CASE WHEN MONTH(df.fecha) = 3 THEN df.monto ELSE 0 END) AS Marzo,
+    SUM(CASE WHEN MONTH(df.fecha) = 4 THEN df.monto ELSE 0 END) AS Abril,
+    SUM(CASE WHEN MONTH(df.fecha) = 5 THEN df.monto ELSE 0 END) AS Mayo,
+    SUM(CASE WHEN MONTH(df.fecha) = 6 THEN df.monto ELSE 0 END) AS Junio,
+    SUM(CASE WHEN MONTH(df.fecha) = 7 THEN df.monto ELSE 0 END) AS Julio,
+  
+    SUM(df.monto) AS Total_Anual
+FROM factura.detalle_factura df
+JOIN actividad.actividad a ON a.id_actividad = df.id_actividad
+WHERE YEAR(df.fecha) = '2025' -- año actual
+GROUP BY a.nombre
+ORDER BY a.nombre;
+*/
+
+
+
+

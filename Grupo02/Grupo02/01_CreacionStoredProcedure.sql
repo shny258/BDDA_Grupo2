@@ -32,7 +32,7 @@ BEGIN
 
     -- Validar existencia de la factura
     IF (NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura)
-		AND NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio)) 
+		AND NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio_d)) 
     OR
     (
         NOT EXISTS (SELECT 1 FROM actividad.participante_actividad_extra WHERE id_participante = @id_participante)
@@ -61,7 +61,7 @@ BEGIN
 
     -- Insertar el detalle
     INSERT INTO factura.detalle_factura (id_factura, id_membresia, id_participante, id_reserva, monto, fecha, id_actividad, id_socio)
-    VALUES (@id_factura, @id_membresia, @id_participante, @id_reserva, @monto, @fecha, @id_actividad, @id_socio);
+    VALUES (@id_factura, @id_membresia, @id_participante, @id_reserva, @monto, @fecha, @id_actividad, @id_socio_d);
 END;
 GO
 
@@ -264,7 +264,13 @@ BEGIN
     DECLARE @total NUMERIC(15,2) = 0;
     DECLARE @id_factura INT;
     DECLARE @id_grupo INT;
-    DECLARE @fecha_emision DATE = GETDATE();
+    DECLARE @fecha_emision DATE = DATEFROMPARTS(@anio, @mes, 1);
+
+    -- Fecha que representa el mes y año de la facturación (primer día del mes)
+    DECLARE @fecha_facturacion DATE = DATEFROMPARTS(@anio, @mes, 1);
+
+    -- Calcular el último día real del mes para evitar errores de fecha inválida
+    DECLARE @ultimo_dia_mes INT = DAY(EOMONTH(@fecha_facturacion));
 
     -- Obtener socio real para facturar (si tiene responsable, usar responsable)
     DECLARE @nro_socio_facturar VARCHAR(10);
@@ -293,24 +299,24 @@ BEGIN
         RETURN;
     END
 
-			-- Obtener grupo familiar del socio responsable (puede ser NULL)
-		SELECT @id_grupo = id_grupo_familiar FROM socio.socio WHERE nro_socio = @nro_socio_facturar;
- 
-		-- Crear tabla de socios a facturar
-		DECLARE @socios TABLE (id_socio INT);
- 
-		IF @id_grupo IS NOT NULL
-		BEGIN
-			-- Facturar a todos los del grupo
-			INSERT INTO @socios (id_socio)
-			SELECT id_socio FROM socio.socio WHERE id_grupo_familiar = @id_grupo;
-		END
-		ELSE
-		BEGIN
-			-- Facturar solo al socio individual
-			INSERT INTO @socios (id_socio)
-			SELECT id_socio FROM socio.socio WHERE nro_socio = @nro_socio_facturar;
-		END
+    -- Obtener grupo familiar del socio responsable (puede ser NULL)
+    SELECT @id_grupo = id_grupo_familiar FROM socio.socio WHERE nro_socio = @nro_socio_facturar;
+
+    -- Crear tabla de socios a facturar
+    DECLARE @socios TABLE (id_socio INT);
+
+    IF @id_grupo IS NOT NULL
+    BEGIN
+        -- Facturar a todos los del grupo
+        INSERT INTO @socios (id_socio)
+        SELECT id_socio FROM socio.socio WHERE id_grupo_familiar = @id_grupo;
+    END
+    ELSE
+    BEGIN
+        -- Facturar solo al socio individual
+        INSERT INTO @socios (id_socio)
+        SELECT id_socio FROM socio.socio WHERE nro_socio = @nro_socio_facturar;
+    END
 
     -- Insertar factura a nombre del socio responsable
     INSERT INTO factura.factura_mensual (
@@ -328,11 +334,7 @@ BEGIN
 
     SET @id_factura = SCOPE_IDENTITY();
 
-    -- Insertar detalles por categoría y actividades para todo el grupo familiar
-    -- ... (el resto del SP sigue igual, usando @socios y @id_factura)
-    -- (usa la misma lógica que ya tenías para insertar detalles y calcular total)
-    
-    -- Insertar detalles por categoría
+    -- Insertar detalles por categoría (membresía)
     INSERT INTO factura.detalle_factura (
         id_factura, id_membresia, id_participante, id_reserva, monto, fecha, id_socio, id_actividad
     )
@@ -340,14 +342,14 @@ BEGIN
         @id_factura,
         NULL, NULL, NULL,
         cs.costo,
-        @fecha_emision,
+        @fecha_facturacion,
         s.id_socio,
         NULL
     FROM @socios s
     JOIN socio.socio so ON s.id_socio = so.id_socio
     JOIN socio.categoria_socio cs ON so.id_categoria = cs.nombre;
 
-    -- Insertar detalles por actividades
+    -- Insertar detalles por actividades (solo para socios que tienen actividades)
     INSERT INTO factura.detalle_factura (
         id_factura, id_membresia, id_participante, id_reserva, monto, fecha, id_socio, id_actividad
     )
@@ -355,35 +357,40 @@ BEGIN
         @id_factura,
         NULL, NULL, NULL,
         a.costo_mensual,
-        @fecha_emision,
+        @fecha_facturacion,
         s.id_socio,
         a.id_actividad
     FROM @socios s
     JOIN actividad.inscripcion_actividad ia ON s.id_socio = ia.id_socio
     JOIN actividad.actividad a ON ia.id_actividad = a.id_actividad
-    WHERE ia.fecha_inscripcion <= DATEFROMPARTS(@anio, @mes, 31);
+    WHERE ia.fecha_inscripcion <= DATEFROMPARTS(@anio, @mes, @ultimo_dia_mes);
 
-    -- Calcular total
+    -- Calcular total sumando todos los montos de detalle
     SELECT @total = SUM(monto)
     FROM factura.detalle_factura
     WHERE id_factura = @id_factura;
 
+    -- Actualizar total en la factura mensual
     UPDATE factura.factura_mensual
     SET total = @total
     WHERE id_factura = @id_factura;
 END;
-go
+GO
+
+
+    -- Actualizar total en
+
 /*
-EXEC factura.generar_factura_mensual @mes = 5, @anio = 2025, @nro_socio = 'SN-4153';
+EXEC factura.generar_factura_mensual @mes = 7, @anio = 2025, @nro_socio = 'SN-4030';
 select * from socio.socio
 SELECT * 
-FROM factura.factura_mensual 
-WHERE nro_socio = 'SN-4046' 
-  AND MONTH(fecha_emision) = 6 
+FROM factura.factura_mensual  
+WHERE nro_socio = 'SN-4022' 
+  AND MONTH(fecha_emision) = 5 
   AND YEAR(fecha_emision) = 2025;
   SELECT * 
 FROM factura.detalle_factura 
-WHERE id_factura = 1;
+WHERE id_factura = 1541;
 */
 -- ==========================================
 -- Modificar Factura Mensual
@@ -1810,14 +1817,14 @@ BEGIN
 
     -- Obtener nro_socio responsable de la factura
     DECLARE @nro_socio VARCHAR(10);
-    SELECT @nro_socio = nro_socio FROM factura.factura_mensual WHERE id_factura = @id_factura;
+    SELECT @nro_socio = nro_socio 
+    FROM factura.factura_mensual 
+    WHERE id_factura = @id_factura;
 
-    -- Obtener grupo familiar asociado al socio responsable
-    DECLARE @id_grupo INT;
-    SELECT @id_grupo = id_grupo_familiar FROM socio.socio WHERE nro_socio = @nro_socio;
-
-    -- Mostrar encabezado factura
-    SELECT * FROM factura.factura_mensual WHERE id_factura = @id_factura;
+    -- Mostrar encabezado factura (mejor evitar SELECT *)
+    SELECT id_factura, nro_socio, fecha_emision, total
+    FROM factura.factura_mensual 
+    WHERE id_factura = @id_factura;
 
     -- Mostrar detalle de cargos con socio, categoría y actividad
     SELECT
@@ -1829,14 +1836,15 @@ BEGIN
         df.fecha
     FROM factura.detalle_factura df
     LEFT JOIN socio.socio s ON df.id_socio = s.id_socio
-    LEFT JOIN socio.categoria_socio cs ON s.id_categoria = cs.nombre
+LEFT JOIN socio.categoria_socio cs ON s.id_categoria = cs.nombre
     LEFT JOIN actividad.actividad a ON df.id_actividad = a.id_actividad
     WHERE df.id_factura = @id_factura
-    ORDER BY s.nro_socio, socio, categoria, actividad;
-END;
+    ORDER BY s.nro_socio, s.nombre + ' ' + s.apellido, cs.nombre, a.nombre;
+END
 
 
-EXEC factura.ver_detalle_factura @id_factura = 7;
+
+
 SELECT 
     s.nro_socio,
     s.nombre,
@@ -1849,4 +1857,4 @@ FROM socio.socio s
 JOIN actividad.inscripcion_actividad ia ON s.id_socio = ia.id_socio
 JOIN actividad.actividad a ON ia.id_actividad = a.id_actividad
 ORDER BY s.nro_socio, s.apellido, s.nombre, ia.fecha_inscripcion;
-select * from socio.socio
+

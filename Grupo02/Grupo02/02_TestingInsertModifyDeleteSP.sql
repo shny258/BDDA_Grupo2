@@ -468,9 +468,9 @@ EXEC actividad.eliminar_actividad_extra @id = 999;
 
 --  INSERTAR INSCRIPCION ACTIVIDAD - CORRECTO (usar IDs existentes, ej: id_socio = 1, id_actividad = 2)
 EXEC actividad.insertar_inscripcion_actividad 
-    @id_socio = 28,
+    @id_socio = 21,
     @id_actividad = 2,
-    @fecha_inscripcion = '2025-05-23';
+    @fecha_inscripcion = '2023-05-23';
 	
 
 --  INSERTAR INSCRIPCION ACTIVIDAD - ERROR (socio inexistente)

@@ -12,7 +12,7 @@
 --Martins Louro  Luciano DNI:42364189  
 USE Com5600G02
 GO
-
+select* from factura.detalle_factura
 --=================================================================
 --Importar tabla de OPEN_METEO_BUENOS_AIRES
 --=================================================================
