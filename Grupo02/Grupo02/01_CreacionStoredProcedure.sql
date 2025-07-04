@@ -260,7 +260,7 @@ CREATE OR ALTER PROCEDURE factura.generar_factura_mensual
 AS
 BEGIN
     SET NOCOUNT ON;
- 
+
     DECLARE @total NUMERIC(15,2) = 0;
     DECLARE @total_bruto NUMERIC(15,2) = 0;
     DECLARE @id_factura INT;
@@ -270,7 +270,7 @@ BEGIN
     DECLARE @ultimo_dia_mes INT = DAY(EOMONTH(@fecha_facturacion));
     DECLARE @nro_socio_facturar VARCHAR(10);
     DECLARE @es_familiar BIT = 0;
- 
+
     -- Obtener socio responsable
     SELECT @nro_socio_facturar = 
         CASE WHEN nro_socio_rp IS NOT NULL AND nro_socio_rp <> ''
@@ -279,13 +279,13 @@ BEGIN
         END
     FROM socio.socio
     WHERE nro_socio = @nro_socio;
- 
+
     IF @nro_socio_facturar IS NULL
     BEGIN
         RAISERROR('Socio no encontrado.', 16, 1);
         RETURN;
     END
- 
+
     -- Validar factura duplicada
     IF EXISTS (
         SELECT 1 FROM factura.factura_mensual
@@ -295,12 +295,12 @@ BEGIN
         RAISERROR('Ya existe factura para ese socio responsable en ese mes/año.', 16, 1);
         RETURN;
     END
- 
+
     -- Verificar si es familiar
     SELECT @id_grupo = id_grupo_familiar FROM socio.socio WHERE nro_socio = @nro_socio_facturar;
     IF @id_grupo IS NOT NULL
         SET @es_familiar = 1;
- 
+
     -- Tabla temporal de socios
     DECLARE @socios TABLE (id_socio INT);
     IF @es_familiar = 1
@@ -313,7 +313,7 @@ BEGIN
         INSERT INTO @socios (id_socio)
         SELECT id_socio FROM socio.socio WHERE nro_socio = @nro_socio_facturar;
     END
- 
+
     -- Crear factura
     INSERT INTO factura.factura_mensual (
         fecha_emision, fecha_vencimiento, segunda_fecha_vencimiento,
@@ -328,9 +328,9 @@ BEGIN
         0,
         @nro_socio_facturar
     );
- 
+
     SET @id_factura = SCOPE_IDENTITY();
- 
+
     -- === Insertar membresías ===
     INSERT INTO factura.detalle_factura (
         id_factura, id_membresia, id_participante, id_reserva,
@@ -353,7 +353,7 @@ BEGIN
     FROM @socios s
     JOIN socio.socio so ON s.id_socio = so.id_socio
     JOIN socio.categoria_socio cs ON so.id_categoria = cs.nombre;
- 
+
     -- === Insertar actividades ===
     INSERT INTO factura.detalle_factura (
         id_factura, id_membresia, id_participante, id_reserva,
@@ -396,12 +396,12 @@ BEGIN
     JOIN actividad.inscripcion_actividad ia ON s.id_socio = ia.id_socio
     JOIN actividad.actividad a ON ia.id_actividad = a.id_actividad
     WHERE ia.fecha_inscripcion <= @fecha_facturacion;
- 
+
     -- Calcular total con descuentos
     SELECT @total = SUM(monto)
     FROM factura.detalle_factura
     WHERE id_factura = @id_factura;
- 
+
     -- Calcular total sin descuentos (bruto)
     SELECT @total_bruto = SUM(
         CASE 
@@ -412,19 +412,19 @@ BEGIN
     )
     FROM factura.detalle_factura
     WHERE id_factura = @id_factura;
- 
+
     -- Actualizar totales en factura
     UPDATE factura.factura_mensual
     SET total = @total,
         total_bruto = @total_bruto
     WHERE id_factura = @id_factura;
- 
+
     -- Obtener id_socio del socio responsable
     DECLARE @id_socio_responsable INT;
     SELECT @id_socio_responsable = id_socio
     FROM socio.socio
     WHERE nro_socio = @nro_socio_facturar;
- 
+
     -- Si tiene cuenta, descontar el total
     IF EXISTS (
         SELECT 1 FROM socio.cuenta WHERE id_socio = @id_socio_responsable
@@ -441,13 +441,13 @@ BEGIN
         DECLARE @apellido_socio VARCHAR(50);
         DECLARE @dni_socio VARCHAR(15);
         DECLARE @nuevo_usuario VARCHAR(100);
- 
+
         SELECT @nombre_socio = nombre, @apellido_socio = apellido, @dni_socio = dni
         FROM socio.socio
         WHERE id_socio = @id_socio_responsable;
- 
+
         SET @nuevo_usuario = LOWER(@nombre_socio + '.' + @apellido_socio + @dni_socio);
- 
+
         INSERT INTO socio.cuenta (
             usuario,
             contrasenia,
@@ -465,7 +465,7 @@ BEGIN
             @id_socio_responsable
         );
     END
- 
+
 END;
 GO
 
@@ -1854,11 +1854,9 @@ BEGIN
     ORDER BY s.nro_socio, s.nombre + ' ' + s.apellido, cs.nombre, a.nombre;
 END;
 GO
-
-
---===========================================
+==================================
 ----------INSCRIBIR PARTICIPANTE EXTRA
---===========================================
+====================================
 CREATE OR ALTER PROCEDURE actividad.inscribir_participante
     @id_socio INT,
     @id_actividad_extra INT,
@@ -1866,46 +1864,46 @@ CREATE OR ALTER PROCEDURE actividad.inscribir_participante
 AS
 BEGIN
     SET NOCOUNT ON;
- 
+
     BEGIN TRY
         BEGIN TRANSACTION;
- 
+
         -- Insertar participante
         INSERT INTO actividad.participante_actividad_extra (id_socio, id_actividad_extra, tipo_participante)
         VALUES (@id_socio, @id_actividad_extra, @tipo_participante);
- 
+
         DECLARE @id_participante INT = SCOPE_IDENTITY();
- 
+
         -- Obtener nro_socio
         DECLARE @nro_socio VARCHAR(10);
         SELECT @nro_socio = nro_socio FROM socio.socio WHERE id_socio = @id_socio;
- 
+
         IF @nro_socio IS NULL
         BEGIN
             RAISERROR('No se encontró el nro_socio para el id_socio %d.', 16, 1, @id_socio);
             ROLLBACK TRANSACTION;
             RETURN;
         END
- 
+
         -- Obtener membresía activa
         DECLARE @id_membresia INT;
- 
+
         SELECT TOP 1 @id_membresia = id_membresia
         FROM socio.membresia
         WHERE id_socio = @id_socio
           AND GETDATE() BETWEEN fecha_inicio AND fecha_fin
         ORDER BY fecha_inicio DESC;
- 
+
         IF @id_membresia IS NULL
         BEGIN
             RAISERROR('No se encontró una membresía activa para el socio %d.', 16, 1, @id_socio);
             ROLLBACK TRANSACTION;
             RETURN;
         END
- 
+
         -- Obtener monto según tipo de participante
         DECLARE @monto NUMERIC(15,2);
- 
+
         SELECT @monto = 
             CASE 
                 WHEN @tipo_participante = 'S' THEN costo_socio
@@ -1913,11 +1911,11 @@ BEGIN
             END
         FROM actividad.actividad_extra
         WHERE id_actividad_extra = @id_actividad_extra;
- 
+
         -- Insertar en factura_mensual
         DECLARE @fecha DATE = GETDATE();
         DECLARE @id_factura INT;
- 
+
         INSERT INTO factura.factura_mensual (
             fecha_emision, 
             fecha_vencimiento,
@@ -1936,10 +1934,10 @@ BEGIN
             @nro_socio,
             @monto
         );
- 
+
         SET @id_factura = SCOPE_IDENTITY();
- 
-        -- Insertar detalle_factura
+
+        -- Insertar detalle_factura con observación "DIA DE PILETA"
         INSERT INTO factura.detalle_factura (
             id_factura,
             id_membresia,
@@ -1947,7 +1945,8 @@ BEGIN
             monto,
             fecha,
             id_socio,
-            id_actividad
+            id_actividad,
+            observacion
         )
         VALUES (
             @id_factura,
@@ -1956,9 +1955,49 @@ BEGIN
             @monto,
             @fecha,
             @id_socio,
-            @id_actividad_extra
+            @id_actividad_extra,
+            'DIA DE PILETA'
         );
- 
+
+        -- Actualizar o crear cuenta del socio usando id_socio
+        IF EXISTS (SELECT 1 FROM socio.cuenta WHERE id_socio = @id_socio)
+        BEGIN
+            UPDATE socio.cuenta
+            SET saldo = ISNULL(saldo, 0) - @monto
+            WHERE id_socio = @id_socio;
+        END
+        ELSE
+        BEGIN
+            -- Si no existe, obtener datos para crear el usuario
+            DECLARE @nombre VARCHAR(50);
+            DECLARE @apellido VARCHAR(50);
+            DECLARE @dni VARCHAR(15);
+            DECLARE @nuevo_usuario VARCHAR(100);
+
+            SELECT @nombre = nombre, @apellido = apellido, @dni = dni
+            FROM socio.socio
+            WHERE id_socio = @id_socio;
+
+            SET @nuevo_usuario = LOWER(@nombre + '.' + @apellido + @dni);
+
+            INSERT INTO socio.cuenta (
+                usuario,
+                contrasenia,
+                saldo,
+                rol,
+                fecha_vigencia_contrasenia,
+                id_socio
+            )
+            VALUES (
+                @nuevo_usuario,
+                'temporal123',
+                -@monto,
+                'Socio',
+                GETDATE(),
+                @id_socio
+            );
+        END
+
         COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
@@ -1966,19 +2005,29 @@ BEGIN
         DECLARE @msg NVARCHAR(4000) = ERROR_MESSAGE();
         RAISERROR(@msg, 16, 1);
     END CATCH
-	END;
+END;
 
-GO
 
+EXEC actividad.inscribir_participante 
+    @id_socio = 6, 
+    @id_actividad_extra = 1, 
+    @tipo_participante = 'I';
+
+
+	select* from factura.detalle_factura
+	select* from actividad.actividad_extra
+	select* from socio.membresia
+	exec factura.eliminar_factura @id_factura= '149'
+	select* from socio.cuenta
 	CREATE OR ALTER PROCEDURE factura.eliminar_factura
     @id_factura INT
 AS
 BEGIN
     SET NOCOUNT ON;
- 
+
     BEGIN TRY
         BEGIN TRANSACTION;
- 
+
         -- Validar que la factura existe
         IF NOT EXISTS (
             SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura
@@ -1988,33 +2037,33 @@ BEGIN
             ROLLBACK TRANSACTION;
             RETURN;
         END
- 
+
         DECLARE @monto NUMERIC(15,2);
         DECLARE @nro_socio VARCHAR(10);
- 
+
         SELECT 
             @monto = total,
             @nro_socio = nro_socio
         FROM factura.factura_mensual
         WHERE id_factura = @id_factura;
- 
+
         -- Actualizar estado de la factura
         UPDATE factura.factura_mensual
         SET estado = 'Anulada'
         WHERE id_factura = @id_factura;
- 
+
         -- Marcar los detalles como anulados
         UPDATE factura.detalle_factura
         SET observacion = 'DETALLE ANULADO'
         WHERE id_factura = @id_factura;
- 
+
         -- Acreditar el monto como saldo a favor en la cuenta del socio (usando id_socio)
         DECLARE @id_socio INT;
- 
+
         SELECT @id_socio = id_socio
         FROM socio.socio
         WHERE nro_socio = @nro_socio;
- 
+
         IF EXISTS (SELECT 1 FROM socio.cuenta WHERE id_socio = @id_socio)
         BEGIN
             UPDATE socio.cuenta
@@ -2028,16 +2077,16 @@ BEGIN
             DECLARE @apellido VARCHAR(50);
             DECLARE @dni VARCHAR(15);
             DECLARE @nuevo_usuario VARCHAR(100);
- 
+
             SELECT 
                 @nombre = nombre,
                 @apellido = apellido,
                 @dni = dni
             FROM socio.socio
             WHERE id_socio = @id_socio;
- 
+
             SET @nuevo_usuario = LOWER(@nombre + '.' + @apellido + @dni); -- Ej: juan.perez12345678
- 
+
             INSERT INTO socio.cuenta (
                 usuario,
                 contrasenia,
@@ -2055,7 +2104,7 @@ BEGIN
                 @id_socio
             );
         END
- 
+
         COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
@@ -2064,3 +2113,88 @@ BEGIN
         RAISERROR(@msg, 16, 1);
     END CATCH
 END;
+=========================================
+----dia de lluvia 
+===========
+CREATE OR ALTER PROCEDURE factura.reintegrar_dias_lluvia
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Reintegros por lluvia: 60% del monto en actividades extra, observación 'DIA DE PILETA'
+        INSERT INTO socio.cuenta (usuario, contrasenia, saldo, rol, fecha_vigencia_contrasenia, id_socio)
+        SELECT
+            LOWER(s.nombre + '.' + s.apellido + s.dni), -- usuario generado
+            'temporal123',
+            ROUND(SUM(df.monto * 0.6), 2), -- suma de reintegros
+            'Socio',
+            GETDATE(),
+            df.id_socio
+        FROM factura.detalle_factura df
+        INNER JOIN actividad.participante_actividad_extra pa ON df.id_participante = pa.id_participante
+        INNER JOIN socio.socio s ON df.id_socio = s.id_socio
+        WHERE 
+            df.observacion = 'DIA DE PILETA'
+            AND EXISTS (
+                SELECT 1
+                FROM factura.clima_anual ca
+                WHERE CAST(LEFT(ca.FechaHora, 10) AS DATE) = CAST(df.fecha AS DATE)
+                  AND ca.Precipitacion > 0
+            )
+            AND NOT EXISTS (
+                SELECT 1
+                FROM socio.cuenta c
+                WHERE c.id_socio = df.id_socio
+            )
+        GROUP BY s.nombre, s.apellido, s.dni, df.id_socio;
+
+        -- Si ya tiene cuenta, solo actualizamos el saldo
+        UPDATE c
+        SET c.saldo = ISNULL(c.saldo, 0) + r.total_reintegro
+        FROM socio.cuenta c
+        INNER JOIN (
+            SELECT
+                df.id_socio,
+                ROUND(SUM(df.monto * 0.6), 2) AS total_reintegro
+            FROM factura.detalle_factura df
+            INNER JOIN actividad.participante_actividad_extra pa ON df.id_participante = pa.id_participante
+            WHERE 
+                df.observacion = 'DIA DE PILETA'
+                AND EXISTS (
+                    SELECT 1
+                    FROM factura.clima_anual ca
+                    WHERE CAST(LEFT(ca.FechaHora, 10) AS DATE) = CAST(df.fecha AS DATE)
+                      AND ca.Precipitacion > 0
+                )
+            GROUP BY df.id_socio
+        ) r ON c.id_socio = r.id_socio;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        DECLARE @msg NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR(@msg, 16, 1);
+    END CATCH
+END;
+/*INSERT INTO factura.clima_anual (FechaHora, Temperatura, Precipitacion, Humedad, Viento)
+VALUES (FORMAT(GETDATE(), 'yyyy-MM-ddTHH:00'), 22.5, 4.50, 85, 10.0);
+
+
+EXEC actividad.inscribir_participante
+    @id_socio = 11,
+    @id_actividad_extra = 1,
+    @tipo_participante = 'S';  -- Socio
+
+	SELECT s.nombre, s.apellido, c.saldo
+FROM socio.cuenta c
+JOIN socio.socio s ON c.id_socio = s.id_socio
+WHERE c.id_socio = 10; -- Cambiá el ID según tu prueba
+EXEC factura.reintegrar_dias_lluvia;
+*/
+
+select* from socio.cuenta
+select* from factura.detalle_factura
