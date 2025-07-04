@@ -23,14 +23,16 @@ CREATE or alter PROCEDURE factura.insertar_detalle_factura
     @id_reserva INT,
     @monto NUMERIC(15,2),
     @fecha DATE,
-	@id_actividad int
+	@id_actividad int,
+	@id_socio_d int
 )
 AS
 BEGIN
     SET NOCOUNT ON;
 
     -- Validar existencia de la factura
-    IF NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura)
+    IF (NOT EXISTS (SELECT 1 FROM factura.factura_mensual WHERE id_factura = @id_factura)
+		AND NOT EXISTS (SELECT 1 FROM socio.socio WHERE id_socio = @id_socio)) 
     OR
     (
         NOT EXISTS (SELECT 1 FROM actividad.participante_actividad_extra WHERE id_participante = @id_participante)
@@ -58,8 +60,8 @@ BEGIN
     END
 
     -- Insertar el detalle
-    INSERT INTO factura.detalle_factura (id_factura, id_membresia, id_participante, id_reserva, monto, fecha, id_actividad)
-    VALUES (@id_factura, @id_membresia, @id_participante, @id_reserva, @monto, @fecha, @id_actividad);
+    INSERT INTO factura.detalle_factura (id_factura, id_membresia, id_participante, id_reserva, monto, fecha, id_actividad, id_socio)
+    VALUES (@id_factura, @id_membresia, @id_participante, @id_reserva, @monto, @fecha, @id_actividad, @id_socio);
 END;
 GO
 
@@ -1348,7 +1350,8 @@ BEGIN
 		@id_reserva = NULL,
 		@monto = @monto_insc,
 		@fecha = @fecha_inscripcion,
-		@id_actividad = @id_actividad;
+		@id_actividad = @id_actividad,
+		@id_socio_d = @id_socio;
 END;
 GO
 
