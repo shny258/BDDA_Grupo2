@@ -13,6 +13,8 @@
 -----------------------------------------------------------------------------
 -- REPORTE DE LOS SOCIOS MOROSOS (2024)
 -----------------------------------------------------------------------------
+use Com5600G02
+go
 
 CREATE OR ALTER PROCEDURE factura.morosos_recurrentes
 (
@@ -67,8 +69,18 @@ BEGIN
     ORDER BY it.ranking_morosidad, im.nro_socio, im.mes_incumplido;
 END;
 
- 
---Exec factura.morosos_recurrentes @fecha_inicio = '2025-01-01',  @fecha_fin = '2026-06-01'
+	delete factura.pago
+	delete factura.detalle_factura
+	delete factura.factura_mensual
+
+	EXEC factura.generar_factura_mensual @mes = 6, @anio = 2026, @nro_socio = 'SN-4031';
+	EXEC factura.generar_factura_mensual @mes = 7, @anio = 2026, @nro_socio = 'SN-4031';
+	EXEC factura.generar_factura_mensual @mes = 8, @anio = 2026, @nro_socio = 'SN-4031';
+
+	EXEC factura.generar_factura_mensual @mes = 7, @anio = 2026, @nro_socio = 'SN-4022';
+	EXEC factura.generar_factura_mensual @mes = 8, @anio = 2026, @nro_socio = 'SN-4022';	
+	
+--Exec factura.morosos_recurrentes @fecha_inicio = '2026-01-01',  @fecha_fin = '2026-12-01'
 GO
 -----------------------------------------------------------------------------
 -- REPORTE DE INGRESOS DE ACTIVIDADES (DESDE ENERO)
@@ -152,5 +164,8 @@ ORDER BY a.nombre;
 */
 
 
+select * from socio.socio
+select * from actividad.inscripcion_actividad where id_socio = '28'
+select * from actividad.presentismo  where id_socio = '28'
 
 

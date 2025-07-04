@@ -12,7 +12,7 @@
 --Martins Louro  Luciano DNI:42364189  
 USE Com5600G02
 GO
-select* from factura.detalle_factura
+
 --=================================================================
 --Importar tabla de OPEN_METEO_BUENOS_AIRES
 --=================================================================
@@ -23,7 +23,7 @@ EXEC factura.importar_clima_csv @path = 'C:\Importar\open-meteo-buenosaires_2025
 --Importar tabla de RESPONDABLES DE PAGO
 --=================================================================
 EXEC socio.importar_socios_excel @ruta = 'C:\Importar\Datos socios.xlsx';
---	select * from socio.socio_temp
+--select * from socio.socio_temp
 
 --=================================================================
 --IMPORTAR Y INSERTAR A SOCIO.CATEGORIA_SOCIO 
@@ -49,7 +49,7 @@ EXEC socio.importar_socios_excel2 @ruta = 'C:\Importar\Datos socios.xlsx';
 --CARGAR DATOS DE SOCIOS_TEMP2 A SOCIOS.SOCIOS
 --=================================================================
 EXEC socio.procesar_socios_temp2;
-EXEC factura.generar_facturas_mensuales @anio = 2024; --Generar Facturas?
+EXEC factura.generar_facturas_mensuales @anio = 2024;
 --select * from socio.socio order by id_grupo_familiar
 
 --=================================================================
@@ -58,9 +58,8 @@ EXEC factura.generar_facturas_mensuales @anio = 2024; --Generar Facturas?
 EXEC factura.importar_excel_a_temporal @ruta = 'C:\Importar\Datos socios.xlsx';
 EXEC factura.procesar_pagos_temporales;
 --select * from factura.pago
-select * from factura.factura_mensual
-delete factura.pago
-delete factura.factura_mensual
+--select * from factura.factura_mensual where nro_socio = 'SN-4028'
+
 
 --=================================================================
 --IMPORTAR DE TARIFA E INSERTAR A ACTIVIDAD.ACTIVIDAD 

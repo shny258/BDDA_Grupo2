@@ -421,21 +421,6 @@ BEGIN
 END;
 GO
 
-
-    -- Actualizar total en
-
-/*
-EXEC factura.generar_factura_mensual @mes = 8, @anio = 2025, @nro_socio = 'SN-4130';
-select * from socio.socio order by id_grupo_familiar
-SELECT * 
-FROM factura.factura_mensual  
-WHERE nro_socio = 'SN-4022' 
-  AND MONTH(fecha_emision) = 5 
-  AND YEAR(fecha_emision) = 2025;
-  SELECT * 
-FROM factura.detalle_factura 
-WHERE id_factura = 1541;
-*/
 -- ==========================================
 -- Modificar Factura Mensual
 -- ==========================================
@@ -932,81 +917,6 @@ BEGIN
     END
 	--termina validacion
     DELETE FROM socio.cuenta WHERE id_usuario = @id_usuario;
-END;
-GO
-
--- ==========================================
--- Insertar Grupo Familiar
--- ==========================================
-CREATE or alter PROCEDURE socio.insertar_grupo_familiar
-    @nombre VARCHAR(50),
-    @apellido VARCHAR(50),
-    @dni VARCHAR(10),
-    @email VARCHAR(50),
-    @fecha_nacimiento DATE,
-    @telefono VARCHAR(20),
-    @parentesco VARCHAR(50)
-AS
-BEGIN
-	--validaciones
-    IF LEN(@dni) < 7 BEGIN
-        RAISERROR('El DNI debe tener al menos 7 caracteres', 16, 1);
-        RETURN;
-    END
-
-    IF EXISTS (SELECT 1 FROM socio.grupo_familiar WHERE dni = @dni) BEGIN
-        RAISERROR('El DNI ya está registrado', 16, 1);
-        RETURN;
-    END
-	--termina validacion
-    INSERT INTO socio.grupo_familiar (
-        nombre, apellido, dni, email, fecha_nacimiento, telefono, parentesco
-    )
-    VALUES (
-        @nombre, @apellido, @dni, @email, @fecha_nacimiento, @telefono, @parentesco
-    );
-END;
-GO
-
--- ==========================================
--- Modificar grupo familiar
--- ==========================================
-CREATE or alter PROCEDURE socio.modificar_grupo_familiar
-    @id_grupo_familiar INT,
-    @email VARCHAR(50),
-    @telefono VARCHAR(20),
-    @parentesco VARCHAR(50)
-AS
-BEGIN
-	
-    IF NOT EXISTS (SELECT 1 FROM socio.grupo_familiar WHERE id_grupo_familiar = @id_grupo_familiar) BEGIN
-        RAISERROR('El grupo familiar no existe', 16, 1);
-        RETURN;
-    END
-	
-    UPDATE socio.grupo_familiar
-    SET email = @email,
-        telefono = @telefono,
-        parentesco = @parentesco
-    WHERE id_grupo_familiar = @id_grupo_familiar;
-END;
-GO
-
--- ==========================================
--- Eliminar grupo familiar
--- ==========================================
-CREATE or alter PROCEDURE socio.eliminar_grupo_familiar
-    @id_grupo_familiar INT
-AS
-BEGIN
-	
-    IF NOT EXISTS (SELECT 1 FROM socio.grupo_familiar WHERE id_grupo_familiar = @id_grupo_familiar) BEGIN
-        RAISERROR('El grupo familiar no existe', 16, 1);
-        RETURN;
-    END
-
-    DELETE FROM socio.grupo_familiar
-    WHERE id_grupo_familiar = @id_grupo_familiar;
 END;
 GO
 
@@ -1895,10 +1805,5 @@ BEGIN
     ORDER BY s.nro_socio, s.nombre + ' ' + s.apellido, cs.nombre, a.nombre;
 END;
 GO
-
-
-
-
---exec factura.ver_detalle_factura @id_factura='1569'
 
 

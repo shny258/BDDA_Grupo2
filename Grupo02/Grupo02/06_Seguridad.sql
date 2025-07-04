@@ -1,4 +1,20 @@
-﻿-- Crear una clave maestra (solo si no existe ya)
+﻿--El archivo .sql con el script debe incluir comentarios donde consten este enunciado, 
+--la fecha de entrega,
+--número de grupo, nombre de la materia, nombres y DNI de los alumnos. Entregar todo en un zip 
+--(observar las pautas para nomenclatura antes expuestas) mediante la sección de prácticas de MIEL. 
+--Solo uno de los miembros del grupo debe hacer la entrega
+-- Fecha entrega 23/05/2025
+--Numero grupo: 02
+--Base De Datos Aplicada
+--Celso quelle Nicolas DNI:44382822
+--Paz Curtet  Facundo DNI:44553403  
+--Contti Abel  DNI:394878489  
+--Martins Louro  Luciano DNI:42364189  
+
+USE Com5600G02
+GO
+
+-- Crear una clave maestra (solo si no existe ya)
 CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'TuContraseñaFuerte123!';
 GO
 
@@ -240,18 +256,18 @@ ALTER ROLE Role_Autoridades ADD MEMBER usuario_sofia;
 ALTER ROLE Role_Autoridades ADD MEMBER usuario_roberto;
 
 
---SELECT 
---    u.name AS Usuario,
---    r.name AS Rol
---FROM sys.database_principals u
---LEFT JOIN sys.database_role_members rm ON u.principal_id = rm.member_principal_id
---LEFT JOIN sys.database_principals r ON rm.role_principal_id = r.principal_id
---WHERE u.type_desc = 'SQL_USER'
---ORDER BY u.name, r.name;
+SELECT 
+    u.name AS Usuario,
+    r.name AS Rol
+FROM sys.database_principals u
+LEFT JOIN sys.database_role_members rm ON u.principal_id = rm.member_principal_id
+LEFT JOIN sys.database_principals r ON rm.role_principal_id = r.principal_id
+WHERE u.type_desc = 'SQL_USER'
+ORDER BY u.name, r.name;
 
 --SELECT SYSTEM_USER AS Login_Usado, USER_NAME() AS Usuario_BD;
  
  
---EXECUTE AS USER = 'usuario_juan';
---EXEC socio.ver_todos_los_empleados;
+EXECUTE AS USER = 'usuario_roberto';
+EXEC socio.ver_todos_los_empleados;
 --REVERT;
