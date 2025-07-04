@@ -1854,9 +1854,8 @@ BEGIN
     ORDER BY s.nro_socio, s.nombre + ' ' + s.apellido, cs.nombre, a.nombre;
 END;
 GO
-==================================
-----------INSCRIBIR PARTICIPANTE EXTRA
-====================================
+---------INSCRIBIR PARTICIPANTE EXTRA
+---====================================
 CREATE OR ALTER PROCEDURE actividad.inscribir_participante
     @id_socio INT,
     @id_actividad_extra INT,
@@ -2006,19 +2005,14 @@ BEGIN
         RAISERROR(@msg, 16, 1);
     END CATCH
 END;
+go
 
 
-EXEC actividad.inscribir_participante 
-    @id_socio = 6, 
-    @id_actividad_extra = 1, 
-    @tipo_participante = 'I';
 
 
-	select* from factura.detalle_factura
-	select* from actividad.actividad_extra
-	select* from socio.membresia
-	exec factura.eliminar_factura @id_factura= '149'
-	select* from socio.cuenta
+
+
+
 	CREATE OR ALTER PROCEDURE factura.eliminar_factura
     @id_factura INT
 AS
@@ -2113,9 +2107,10 @@ BEGIN
         RAISERROR(@msg, 16, 1);
     END CATCH
 END;
-=========================================
+go
+---=========================================
 ----dia de lluvia 
-===========
+---===========
 CREATE OR ALTER PROCEDURE factura.reintegrar_dias_lluvia
 AS
 BEGIN
@@ -2180,6 +2175,7 @@ BEGIN
         RAISERROR(@msg, 16, 1);
     END CATCH
 END;
+go
 /*INSERT INTO factura.clima_anual (FechaHora, Temperatura, Precipitacion, Humedad, Viento)
 VALUES (FORMAT(GETDATE(), 'yyyy-MM-ddTHH:00'), 22.5, 4.50, 85, 10.0);
 
@@ -2195,6 +2191,96 @@ JOIN socio.socio s ON c.id_socio = s.id_socio
 WHERE c.id_socio = 10; -- Cambiá el ID según tu prueba
 EXEC factura.reintegrar_dias_lluvia;
 */
-
+EXEC actividad.inscribir_participante 
+    @id_socio = 140, 
+    @id_actividad_extra = 1, 
+    @tipo_participante = 'I';
 select* from socio.cuenta
 select* from factura.detalle_factura
+select* from actividad.inscripcion_actividad
+EXEC socio.ver_perfil_socio @id_socio = 150;
+delete factura.detalle_factura
+delete factura.factura_mensual
+delete factura.
+CREATE OR ALTER PROCEDURE socio.ver_perfil_socio
+    @id_socio INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT *
+    FROM (
+        -- 1. Cuotas mensuales
+        SELECT
+            f.id_factura AS Id,
+            'Cuota' AS Tipo,
+            f.total AS Monto,
+            f.fecha_vencimiento AS Fecha_vencimiento,
+            f.estado AS Estado,
+            'Cuota mensual' AS NombreActividad
+        FROM factura.factura_mensual f
+        INNER JOIN socio.socio s ON s.nro_socio = f.nro_socio
+        WHERE s.id_socio = @id_socio
+
+        UNION ALL
+
+        -- 2. Actividades Extra
+        SELECT
+            df.id_detallefactura AS Id,
+            'Actividad Extra' AS Tipo,
+            df.monto AS Monto,
+            f.fecha_vencimiento AS Fecha_vencimiento,
+            f.estado AS Estado,
+            a.nombre AS NombreActividad
+        FROM factura.detalle_factura df
+        INNER JOIN factura.factura_mensual f ON df.id_factura = f.id_factura
+        INNER JOIN actividad.actividad a ON df.id_actividad = a.id_actividad
+        WHERE df.id_socio = @id_socio
+          AND df.id_participante IS NOT NULL
+
+        UNION ALL
+
+        -- 3. Actividades Regulares (inscripciones)
+        SELECT
+            ia.id_inscripcion_actividad AS Id,
+            'Actividad Regular' AS Tipo,
+            a.costo_mensual AS Monto,
+            NULL AS Fecha_vencimiento,
+            CASE 
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM factura.detalle_factura df
+                    INNER JOIN factura.factura_mensual fm ON df.id_factura = fm.id_factura
+                    WHERE df.id_socio = @id_socio
+                      AND df.id_actividad = ia.id_actividad
+                      AND fm.estado = 'Pagada'
+                ) THEN 'Pagada'
+                ELSE 'Pendiente'
+            END AS Estado,
+            a.nombre AS NombreActividad
+        FROM actividad.inscripcion_actividad ia
+        INNER JOIN actividad.actividad a ON ia.id_actividad = a.id_actividad
+        WHERE ia.id_socio = @id_socio
+
+        UNION ALL
+
+        -- 4. Saldo a favor
+        SELECT
+            NULL AS Id,
+            'Saldo a favor' AS Tipo,
+            ISNULL(c.saldo, 0) AS Monto,
+            NULL AS Fecha_vencimiento,
+            CASE WHEN ISNULL(c.saldo, 0) > 0 THEN 'Disponible' ELSE 'Sin saldo' END AS Estado,
+            'Cuenta' AS NombreActividad
+        FROM socio.cuenta c
+        WHERE c.id_socio = @id_socio
+    ) AS Todo
+    ORDER BY 
+        CASE Tipo 
+            WHEN 'Saldo a favor' THEN 4
+            WHEN 'Actividad Regular' THEN 3
+            WHEN 'Actividad Extra' THEN 2
+            ELSE 1
+        END,
+        Fecha_vencimiento
+END
