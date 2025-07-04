@@ -2311,6 +2311,7 @@ BEGIN
         Fecha_vencimiento
 END
 
+GO
 
 CREATE OR ALTER PROCEDURE socio.asignar_medio_pago_random
 AS

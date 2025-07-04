@@ -73,7 +73,7 @@ END;
 	delete factura.detalle_factura
 	delete factura.factura_mensual
 	select * from factura.factura_mensual
-
+	exec factura.ver_detalle_factura @id_factura= 1541
 
 	EXEC factura.generar_factura_mensual @mes = 6, @anio = 2026, @nro_socio = 'SN-4031';
 	EXEC factura.generar_factura_mensual @mes = 7, @anio = 2026, @nro_socio = 'SN-4031';
@@ -165,44 +165,4 @@ GROUP BY a.nombre
 ORDER BY a.nombre;
 */
 
-
-select * from socio.socio
-select * from factura.medio_de_pago
-
-CREATE OR ALTER PROCEDURE socio.asignar_medio_pago_random
-AS
-BEGIN
-    SET NOCOUNT ON;
- 
-    DECLARE 
-        @id_socio INT,
-        @id_medio_random INT;
- 
-    DECLARE cursor_socios CURSOR FOR
-        SELECT id_socio FROM socio.socio;
- 
-    OPEN cursor_socios;
-    FETCH NEXT FROM cursor_socios INTO @id_socio;
- 
-    WHILE @@FETCH_STATUS = 0
-    BEGIN
-        -- Obtener un medio de pago aleatorio
-        SELECT TOP 1 @id_medio_random = id_medio_de_pago
-        FROM factura.medio_de_pago
-        ORDER BY NEWID();
- 
-        -- Asignar el medio de pago al socio
-        UPDATE socio.socio
-        SET id_medio_de_pago = @id_medio_random
-        WHERE id_socio = @id_socio;
- 
-        FETCH NEXT FROM cursor_socios INTO @id_socio;
-    END
- 
-    CLOSE cursor_socios;
-    DEALLOCATE cursor_socios;
-END;
-GO
- 
-EXEC socio.asignar_medio_pago_random;
  

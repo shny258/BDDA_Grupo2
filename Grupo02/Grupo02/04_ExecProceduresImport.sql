@@ -113,3 +113,7 @@ select * from socio.categoria_socio
 EXEC actividad.procesar_inscripcion_actividad
 --select * from actividad.inscripcion_actividad
 
+---========================================
+---CAMBIAR METODOS DE PAGO
+---=========================================
+EXEC socio.asignar_medio_pago_random;

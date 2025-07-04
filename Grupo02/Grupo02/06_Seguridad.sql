@@ -271,3 +271,5 @@ ORDER BY u.name, r.name;
 EXECUTE AS USER = 'usuario_roberto';
 EXEC socio.ver_todos_los_empleados;
 --REVERT;*/
+
+select * from socio.empleado
