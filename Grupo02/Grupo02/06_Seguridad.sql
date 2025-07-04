@@ -256,7 +256,7 @@ ALTER ROLE Role_Autoridades ADD MEMBER usuario_sofia;
 ALTER ROLE Role_Autoridades ADD MEMBER usuario_roberto;
 
 
-SELECT 
+/*SELECT 
     u.name AS Usuario,
     r.name AS Rol
 FROM sys.database_principals u
@@ -270,4 +270,4 @@ ORDER BY u.name, r.name;
  
 EXECUTE AS USER = 'usuario_roberto';
 EXEC socio.ver_todos_los_empleados;
---REVERT;
+--REVERT;*/

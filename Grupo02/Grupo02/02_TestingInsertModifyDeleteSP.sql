@@ -90,7 +90,7 @@ EXEC socio.insertar_categoria_socio
 
 --  MODIFICAR CATEGORIA SOCIO - CORRECTO (usar nombre existente, ej: 'mayor')
 EXEC socio.modificar_categoria_socio 
-    @nombre = 'mayor',
+    @nombre = 'Mayor',
     @fecha_vigencia = '2025-02.26',
     @costo = 3500;
 
@@ -101,7 +101,7 @@ EXEC socio.modificar_categoria_socio
     @costo = 3500;
 
 --  ELIMINAR CATEGORIA SOCIO - CORRECTO (usar nombre existente, ej: 'mayor')
-EXEC socio.eliminar_categoria_socio @nombre = 'mayor';
+EXEC socio.eliminar_categoria_socio @nombre = 'Mayor';
 
 --  ELIMINAR CATEGORIA SOCIO - ERROR (nombre inexistente)
 EXEC socio.eliminar_categoria_socio @nombre = 'noexiste';

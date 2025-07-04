@@ -52,17 +52,7 @@ IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'factura')
     EXEC('CREATE SCHEMA factura');
 go
 
--- Tabla de usuarios del sistema 
-CREATE TABLE socio.cuenta (
-    id_usuario int identity (1,1) PRIMARY KEY,
-    usuario VARCHAR(50) UNIQUE NOT NULL,
-    contrasenia VARCHAR(50) NOT NULL,
-	saldo NUMERIC(15,2),
-    rol VARCHAR(50) NOT NULL,
-    fecha_vigencia_contrasenia DATE NOT NULL,
-	id_socio int CONSTRAINT FK_cuenta FOREIGN KEY (id_socio)
-        REFERENCES socio.socio(id_socio),
-);
+
 
 -- Tabla de formas de pago
 CREATE TABLE factura.medio_de_pago (
@@ -102,7 +92,17 @@ CREATE TABLE socio.socio (
     id_grupo_familiar INT REFERENCES socio.grupo_familiar(id_grupo_familiar),
     id_categoria varchar(50) REFERENCES socio.categoria_socio(nombre)
 );
-
+-- Tabla de usuarios del sistema 
+CREATE TABLE socio.cuenta (
+    id_usuario int identity (1,1) PRIMARY KEY,
+    usuario VARCHAR(50) UNIQUE NOT NULL,
+    contrasenia VARCHAR(50) NOT NULL,
+	saldo NUMERIC(15,2),
+    rol VARCHAR(50) NOT NULL,
+    fecha_vigencia_contrasenia DATE NOT NULL,
+	id_socio int CONSTRAINT FK_cuenta FOREIGN KEY (id_socio)
+        REFERENCES socio.socio(id_socio),
+);
 -- Membresía por socio
 CREATE TABLE socio.membresia (
     id_membresia int identity PRIMARY KEY,

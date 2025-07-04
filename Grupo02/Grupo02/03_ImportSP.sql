@@ -411,7 +411,7 @@ BEGIN
 
    CREATE TABLE ##PagoExcel (
     id_pago_excel BIGINT,
-    fecha_pago date,   -- leer como texto
+    fecha_pago date,   
     responsable_pago NVARCHAR(100),
     monto NUMERIC(15,2),
     medio_de_pago NVARCHAR(50)
@@ -673,7 +673,7 @@ BEGIN
     CREATE TABLE ##PresentismoExcel (
         nro_socio VARCHAR(50),
         nombre_actividad VARCHAR(100),
-        fecha_asistencia DATE,  -- Cambié a DATE
+        fecha_asistencia DATE,  
         asistencia CHAR(1),
         profesor VARCHAR(100)
     );

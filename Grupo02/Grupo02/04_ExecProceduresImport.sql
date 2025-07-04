@@ -111,3 +111,4 @@ select * from socio.categoria_socio
 ---=========================================
 EXEC actividad.procesar_inscripcion_actividad
 --select * from actividad.inscripcion_actividad
+
