@@ -1070,7 +1070,7 @@ CREATE or alter PROCEDURE socio.insertar_categoria_socio
 AS
 BEGIN
 	
-    IF @costo <= 0 BEGIN
+    IF @costo < 0 BEGIN
         RAISERROR('El costo debe ser mayor a cero', 16, 1);
         RETURN;
     END
@@ -2195,6 +2195,7 @@ BEGIN
     END CATCH
 END;
 go
+
 /*INSERT INTO factura.clima_anual (FechaHora, Temperatura, Precipitacion, Humedad, Viento)
 VALUES (FORMAT(GETDATE(), 'yyyy-MM-ddTHH:00'), 22.5, 4.50, 85, 10.0);
 
@@ -2207,13 +2208,15 @@ EXEC actividad.inscribir_participante
 	SELECT s.nombre, s.apellido, c.saldo
 FROM socio.cuenta c
 JOIN socio.socio s ON c.id_socio = s.id_socio
-WHERE c.id_socio = 10; -- Cambiá el ID según tu prueba
+WHERE c.id_socio = 125; -- Cambiá el ID según tu prueba
+
 EXEC factura.reintegrar_dias_lluvia;
 
 EXEC actividad.inscribir_participante 
     @id_socio = 140, 
     @id_actividad_extra = 1, 
     @tipo_participante = 'I';
+
 select* from socio.cuenta
 select* from factura.detalle_factura
 select* from actividad.inscripcion_actividad
@@ -2223,7 +2226,7 @@ delete factura.detalle_factura
 delete factura.factura_mensual
 delete factura.*/
 
-exec factura.eliminar_factura @id_factura=129
+--exec factura.eliminar_factura @id_factura=129
 
 CREATE OR ALTER PROCEDURE socio.ver_perfil_socio
     @id_socio INT
@@ -2307,3 +2310,39 @@ BEGIN
         END,
         Fecha_vencimiento
 END
+
+
+CREATE OR ALTER PROCEDURE socio.asignar_medio_pago_random
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    DECLARE 
+        @id_socio INT,
+        @id_medio_random INT;
+ 
+    DECLARE cursor_socios CURSOR FOR
+        SELECT id_socio FROM socio.socio;
+ 
+    OPEN cursor_socios;
+    FETCH NEXT FROM cursor_socios INTO @id_socio;
+ 
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        -- Obtener un medio de pago aleatorio
+        SELECT TOP 1 @id_medio_random = id_medio_de_pago
+        FROM factura.medio_de_pago
+        ORDER BY NEWID();
+ 
+        -- Asignar el medio de pago al socio
+        UPDATE socio.socio
+        SET id_medio_de_pago = @id_medio_random
+        WHERE id_socio = @id_socio;
+ 
+        FETCH NEXT FROM cursor_socios INTO @id_socio;
+    END
+ 
+    CLOSE cursor_socios;
+    DEALLOCATE cursor_socios;
+END;
+GO

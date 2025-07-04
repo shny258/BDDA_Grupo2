@@ -11,7 +11,7 @@
 --Contti Abel  DNI:394878489  
 --Martins Louro  Luciano DNI:42364189  
 -----------------------------------------------------------------------------
--- REPORTE DE LOS SOCIOS MOROSOS (2024)
+-- REPORTE 1 SOCIOS MOROSOS (2024) 
 -----------------------------------------------------------------------------
 use Com5600G02
 go
@@ -72,10 +72,12 @@ END;
 	/*delete factura.pago
 	delete factura.detalle_factura
 	delete factura.factura_mensual
+	select * from factura.factura_mensual
 
-	EXEC factura.generar_factura_mensual @mes = 1, @anio = 2025, @nro_socio = 'SN-4131';
-	EXEC factura.generar_factura_mensual @mes = 7, @anio = 2025, @nro_socio = 'SN-4031';
-	EXEC factura.generar_factura_mensual @mes = 8, @anio = 2025, @nro_socio = 'SN-4031';
+
+	EXEC factura.generar_factura_mensual @mes = 6, @anio = 2026, @nro_socio = 'SN-4031';
+	EXEC factura.generar_factura_mensual @mes = 7, @anio = 2026, @nro_socio = 'SN-4031';
+	EXEC factura.generar_factura_mensual @mes = 8, @anio = 2026, @nro_socio = 'SN-4031';
 
 	EXEC factura.generar_factura_mensual @mes = 7, @anio = 2026, @nro_socio = 'SN-4022';
 	EXEC factura.generar_factura_mensual @mes = 8, @anio = 2026, @nro_socio = 'SN-4022';	
@@ -83,7 +85,7 @@ END;
 --Exec factura.morosos_recurrentes @fecha_inicio = '2026-01-01',  @fecha_fin = '2026-12-01'
 GO
 -----------------------------------------------------------------------------
--- REPORTE DE INGRESOS DE ACTIVIDADES (DESDE ENERO)
+-- REPORTE 2 INGRESOS DE ACTIVIDADES (DESDE ENERO)
 -----------------------------------------------------------------------------
 SELECT 
     a.nombre AS actividad,
@@ -164,3 +166,43 @@ ORDER BY a.nombre;
 */
 
 
+select * from socio.socio
+select * from factura.medio_de_pago
+
+CREATE OR ALTER PROCEDURE socio.asignar_medio_pago_random
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    DECLARE 
+        @id_socio INT,
+        @id_medio_random INT;
+ 
+    DECLARE cursor_socios CURSOR FOR
+        SELECT id_socio FROM socio.socio;
+ 
+    OPEN cursor_socios;
+    FETCH NEXT FROM cursor_socios INTO @id_socio;
+ 
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        -- Obtener un medio de pago aleatorio
+        SELECT TOP 1 @id_medio_random = id_medio_de_pago
+        FROM factura.medio_de_pago
+        ORDER BY NEWID();
+ 
+        -- Asignar el medio de pago al socio
+        UPDATE socio.socio
+        SET id_medio_de_pago = @id_medio_random
+        WHERE id_socio = @id_socio;
+ 
+        FETCH NEXT FROM cursor_socios INTO @id_socio;
+    END
+ 
+    CLOSE cursor_socios;
+    DEALLOCATE cursor_socios;
+END;
+GO
+ 
+EXEC socio.asignar_medio_pago_random;
+ 

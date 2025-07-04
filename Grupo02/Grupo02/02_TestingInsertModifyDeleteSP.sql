@@ -31,10 +31,11 @@ EXEC socio.insertar_cuenta
 
 --  MODIFICAR CUENTA - CORRECTO (usar id_usuario valido, ej: 4)
 EXEC socio.modificar_cuenta 
-    @id_usuario = 6,
+    @id_usuario = 1,
     @contrasenia = 'claveSeguraReforzada33333',
     @rol = 'socio',
     @fecha_vigencia_contrasenia = '2026-01-01';
+
 
 --  MODIFICAR CUENTA - ERROR (contrasenia demasiado corta para modificacion)
 EXEC socio.modificar_cuenta 
@@ -62,7 +63,7 @@ EXEC factura.insertar_medio_de_pago
 
 --  Caso correcto: Modificar medio_pago
 EXEC factura.modificar_medio_de_pago 
-    @nombre = 'Tarjeta de Credito',
+    @nombre = 'Tarjeta de Debito',
     @id = 1;
 
 --  Caso incorrecto: Modificar medio_pago (nombre invalido)

@@ -29,6 +29,7 @@ EXEC socio.importar_socios_excel @ruta = 'C:\Importar\Datos socios.xlsx';
 --IMPORTAR Y INSERTAR A SOCIO.CATEGORIA_SOCIO 
 --=================================================================
 EXEC socio.importar_categorias_socio @path = 'C:\Importar\Datos socios.xlsx';
+EXEC socio.insertar_categoria_socio @nombre = 'Responsable', @costo = 0, @fecha_vigencia = '2026-01-01'
 --agregar categoria responsable
 --select * from socio.categoria_socio
 
