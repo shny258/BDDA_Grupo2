@@ -59,7 +59,9 @@ CREATE TABLE socio.cuenta (
     contrasenia VARCHAR(50) NOT NULL,
 	saldo NUMERIC(15,2),
     rol VARCHAR(50) NOT NULL,
-    fecha_vigencia_contrasenia DATE NOT NULL
+    fecha_vigencia_contrasenia DATE NOT NULL,
+	id_socio int CONSTRAINT FK_cuenta FOREIGN KEY (id_socio)
+        REFERENCES socio.socio(id_socio),
 );
 
 -- Tabla de formas de pago

@@ -36,6 +36,7 @@ EXEC socio.importar_categorias_socio @path = 'C:\Importar\Datos socios.xlsx';
 --CARGAR DATOS DE SOCIOS_TEMP A SOCIOS.SOCIOS
 --=================================================================
 EXEC factura.cargar_medio_de_pago; --Cargar minimamente 3 medios de pagos
+--select * from factura.medio_de_pago
 EXEC socio.procesar_socios_temp;
 --select * from socio.socio
 
@@ -104,7 +105,7 @@ EXEC actividad.importar_presentismo_excel @ruta='C:\Importar\Datos socios.xlsx';
 ---=========================================
 EXEC  actividad.procesar_presentismo_excel
 --select* from actividad.presentismo
-
+select * from socio.categoria_socio
 ---========================================
 ---INSERTAR EN TABLA INSCRIPCION_ACTIVIDAD
 ---=========================================
