@@ -1296,6 +1296,14 @@ BEGIN
         RETURN;
     END
 
+	--verificar si hay socio responsable
+	if EXISTS (SELECT nro_socio_rp FROM socio.socio WHERE id_socio = @id_socio)
+	BEGIN
+		SELECT @nro_socio_insc = nro_socio_rp
+		from socio.socio 
+		where id_socio = @id_socio;
+	END
+
 	--Validar si existe la factura
 	SELECT TOP 1 @id_factura_insc = id_factura
 	from factura.factura_mensual
