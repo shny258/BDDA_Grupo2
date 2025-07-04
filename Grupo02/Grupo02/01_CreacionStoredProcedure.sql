@@ -593,6 +593,7 @@ go
 -- Insertar Socio
 -- ==========================================
 CREATE OR ALTER PROCEDURE socio.insertar_socio
+(
     @nro_socio VARCHAR(10),
     @dni VARCHAR(15),
     @nombre VARCHAR(50),
@@ -603,126 +604,147 @@ CREATE OR ALTER PROCEDURE socio.insertar_socio
     @telefono_emergencia VARCHAR(20),
     @cobertura_medica VARCHAR(100),
     @nro_cobertura_medica VARCHAR(50),
-    @id_medio_de_pago INT,
-    @id_grupo_familiar INT = NULL,
+    @id_medio_de_pago INT = 1,  -- Valor por defecto 1
     @nro_socio_rp VARCHAR(10),
-    @categoria_ingresada VARCHAR(50)
+	  @categoria_ingresada VARCHAR(50)
+)
 AS
 BEGIN
     SET NOCOUNT ON;
-
+ 
     DECLARE @edad INT;
-    DECLARE @categoria_rp VARCHAR(50);
-    DECLARE @id_grupo_responsable INT;
-
-    -- Validar categoría exactamente con capitalización esperada
-    IF @categoria_ingresada NOT IN ('Menor', 'Cadete', 'Mayor', 'Responsable')
+    DECLARE @categoria VARCHAR(50);
+    DECLARE @id_grupo_familiar INT = NULL;
+    DECLARE @id_socio INT;
+    DECLARE @fecha_inicio DATE = CAST(GETDATE() AS DATE);
+    DECLARE @fecha_renovada DATE = @fecha_inicio;
+    DECLARE @fecha_fin DATE = DATEADD(YEAR, 1, @fecha_inicio);
+    DECLARE @costo_categoria NUMERIC(15,2);
+    DECLARE @id_factura INT;
+    DECLARE @mes INT = MONTH(@fecha_inicio);
+    DECLARE @anio INT = YEAR(@fecha_inicio);
+ 
+    SET @categoria = @categoria_ingresada;
+ 
+    -- Validar responsable si es Menor o Cadete
+    IF @categoria IN ('Menor', 'Cadete')
     BEGIN
-        RAISERROR('La categoria ingresada no es valida', 16, 1);
-        RETURN;
-    END
-
-    -- Calcular edad exacta
-    SET @edad = DATEDIFF(YEAR, @fecha_nacimiento, GETDATE());
-    IF DATEADD(YEAR, @edad, @fecha_nacimiento) > GETDATE()
-        SET @edad = @edad - 1;
-
-    -- Validaciones de edad según categoría
-    IF @categoria_ingresada = 'Menor' AND @edad > 12
-    BEGIN
-        RAISERROR('La edad no corresponde a la categoría Menor', 16, 1);
-        RETURN;
-    END
-    ELSE IF @categoria_ingresada = 'Cadete' AND (@edad < 13 OR @edad > 17)
-    BEGIN
-        RAISERROR('La edad no corresponde a la categoría Cadete', 16, 1);
-        RETURN;
-    END
-    ELSE IF @categoria_ingresada = 'Mayor' AND @edad < 18
-    BEGIN
-        RAISERROR('La edad no corresponde a la categoría Mayor', 16, 1);
-        RETURN;
-    END
-    ELSE IF @categoria_ingresada = 'Responsable' AND @edad < 18
-    BEGIN
-        RAISERROR('Un socio Responsable debe tener al menos 18 años', 16, 1);
-        RETURN;
-    END
-
-    -- Validación si el socio es Menor o Cadete
-    IF @categoria_ingresada IN ('Menor', 'Cadete')
-    BEGIN
-        IF @nro_socio_rp IS NULL OR LTRIM(RTRIM(@nro_socio_rp)) = ''
+        IF @nro_socio_rp IS NULL OR @nro_socio_rp = ''
         BEGIN
-            RAISERROR('El socio Menor o Cadete debe tener un socio responsable asignado', 16, 1);
+            RAISERROR('Socios Menores o Cadetes deben tener un socio responsable.', 16, 1);
             RETURN;
         END
-
-        -- Buscar datos del responsable
-        SELECT 
-            @categoria_rp = id_categoria,
-            @id_grupo_responsable = id_grupo_familiar
+ 
+        -- Validar que el socio responsable exista y sea Mayor o Responsable
+        IF NOT EXISTS (
+            SELECT 1 FROM socio.socio s
+            WHERE s.nro_socio = @nro_socio_rp
+              AND s.id_categoria IN ('Mayor', 'Responsable')  -- Cambio acá
+        )
+        BEGIN
+            RAISERROR('El socio responsable no existe o no es mayor o responsable.', 16, 1);
+            RETURN;
+        END
+ 
+        -- Obtener grupo familiar del responsable
+        SELECT @id_grupo_familiar = id_grupo_familiar
         FROM socio.socio
         WHERE nro_socio = @nro_socio_rp;
-
-        IF @categoria_rp IS NULL
-        BEGIN
-            RAISERROR('El socio responsable indicado no existe', 16, 1);
-            RETURN;
-        END
-
-        IF @categoria_rp NOT IN ('Mayor', 'Responsable')
-        BEGIN
-            RAISERROR('El socio responsable debe ser de categoría Mayor o Responsable', 16, 1);
-            RETURN;
-        END
-
-        -- Obtener edad del responsable para asegurarse que tiene 18+
-        DECLARE @edad_resp INT;
-        SELECT @edad_resp = DATEDIFF(YEAR, fecha_nacimiento, GETDATE())
-        FROM socio.socio
-        WHERE nro_socio = @nro_socio_rp;
-
-        IF DATEADD(YEAR, @edad_resp, (SELECT fecha_nacimiento FROM socio.socio WHERE nro_socio = @nro_socio_rp)) > GETDATE()
-            SET @edad_resp = @edad_resp - 1;
-
-        IF @edad_resp < 18
-        BEGIN
-            RAISERROR('El socio responsable debe tener al menos 18 años', 16, 1);
-            RETURN;
-        END
-
-        -- Si el responsable no tiene grupo, crear uno y asignarlo
-        IF @id_grupo_responsable IS NULL
+ 
+        -- Si responsable no tiene grupo familiar, crear uno nuevo
+        IF @id_grupo_familiar IS NULL
         BEGIN
             INSERT INTO socio.grupo_familiar (fecha_creacion)
             VALUES (GETDATE());
-
-            SET @id_grupo_responsable = SCOPE_IDENTITY();
-
+ 
+            SET @id_grupo_familiar = SCOPE_IDENTITY();
+ 
+            -- Actualizar grupo familiar del responsable
             UPDATE socio.socio
-            SET id_grupo_familiar = @id_grupo_responsable
+            SET id_grupo_familiar = @id_grupo_familiar
             WHERE nro_socio = @nro_socio_rp;
         END
-
-        -- Asignar al nuevo socio el grupo del responsable
-        SET @id_grupo_familiar = @id_grupo_responsable;
     END
-
-    -- Insertar el nuevo socio
+    ELSE
+    BEGIN
+        -- Para mayores, responsable y grupo familiar nulos
+        SET @nro_socio_rp = NULL;
+        SET @id_grupo_familiar = NULL;
+    END
+ 
+    -- Insertar socio
     INSERT INTO socio.socio (
-        nro_socio, dni, nombre, apellido, email, fecha_nacimiento, 
-        telefono_contacto, telefono_emergencia, cobertura_medica, 
-        nro_cobertura_medica, id_medio_de_pago, id_grupo_familiar, id_categoria, nro_socio_rp
+        nro_socio, dni, nombre, apellido, email, fecha_nacimiento,
+        telefono_contacto, telefono_emergencia, cobertura_medica,
+        nro_cobertura_medica, id_medio_de_pago, id_grupo_familiar,
+        id_categoria, nro_socio_rp
     )
     VALUES (
-        @nro_socio, @dni, @nombre, @apellido, @email, @fecha_nacimiento, 
-        @telefono_contacto, @telefono_emergencia, @cobertura_medica, 
-        @nro_cobertura_medica, @id_medio_de_pago, @id_grupo_familiar, @categoria_ingresada, @nro_socio_rp
+        @nro_socio, @dni, @nombre, @apellido, @email, @fecha_nacimiento,
+        @telefono_contacto, @telefono_emergencia, @cobertura_medica,
+        @nro_cobertura_medica, @id_medio_de_pago, @id_grupo_familiar,
+        @categoria, @nro_socio_rp
     );
+ 
+    SET @id_socio = SCOPE_IDENTITY();
+ 
+    -- Obtener costo categoría (usar COLLATE si hay conflictos)
+    SELECT @costo_categoria = costo 
+    FROM socio.categoria_socio 
+    WHERE nombre COLLATE Modern_Spanish_CI_AS = @categoria COLLATE Modern_Spanish_CI_AS;
+ 
+    IF @costo_categoria IS NULL
+    BEGIN
+        RAISERROR('No se encontró costo para la categoría.', 16, 1);
+        RETURN;
+    END
+ 
+    -- Insertar membresía
+    EXEC socio.insertar_membresia
+        @id_socio = @id_socio,
+        @fecha_inicio = @fecha_inicio,
+        @fecha_renovada = @fecha_renovada,
+        @fecha_fin = @fecha_fin,
+        @costo = @costo_categoria;
+ 
+    -- Si es Mayor o Responsable, generar factura propia
+    IF @categoria IN ('Mayor', 'Responsable')
+    BEGIN
+        EXEC factura.generar_factura_mensual
+            @mes = @mes,
+            @anio = @anio,
+            @nro_socio = @nro_socio;
+    END
+ 
+    -- Si es Menor o Cadete, agregar detalle a la factura del socio responsable
+    IF @categoria IN ('Menor', 'Cadete') AND @nro_socio_rp IS NOT NULL
+    BEGIN
+        -- Buscar factura del responsable para mes y año actuales
+        SELECT TOP 1 @id_factura = f.id_factura
+        FROM factura.factura_mensual f
+        WHERE f.nro_socio = @nro_socio_rp
+          AND MONTH(f.fecha_emision) = @mes
+          AND YEAR(f.fecha_emision) = @anio;
+ 
+        IF @id_factura IS NULL
+        BEGIN
+            RAISERROR('No se encontró factura para el responsable del menor en este mes/año.', 16, 1);
+            RETURN;
+        END
+ 
+        -- Insertar detalle de membresía en factura del responsable
+        INSERT INTO factura.detalle_factura (
+            id_factura, id_membresia, id_participante, id_reserva,
+            monto, fecha, id_socio, id_actividad
+        )
+        VALUES (
+            @id_factura, NULL, NULL, NULL,
+            @costo_categoria, @fecha_inicio, @id_socio, NULL
+        );
+    END
+ 
 END;
-
-go
+GO
 -- ==========================================
 -- Modificar Socio
 -- ==========================================

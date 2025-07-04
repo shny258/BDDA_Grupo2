@@ -175,7 +175,6 @@ BEGIN
         @cobertura_medica VARCHAR(100),
         @nro_cobertura_medica VARCHAR(50),
         @id_medio_de_pago INT = 1,
-        @id_grupo_familiar INT = NULL,
         @nro_socio_rp VARCHAR(10),
         @categoria_ingresada VARCHAR(50),
         @edad INT;
@@ -210,6 +209,13 @@ BEGIN
             ELSE
                 SET @categoria_ingresada = 'Mayor';
 
+            -- Validar categoría válida (opcional, recomendable)
+            IF @categoria_ingresada NOT IN ('Menor', 'Cadete', 'Mayor', 'Responsable')
+            BEGIN
+                RAISERROR('Categoría no válida: %s', 16, 1, @categoria_ingresada);
+                RETURN;
+            END
+
             -- Llamar al SP de inserción
             EXEC socio.insertar_socio
                 @nro_socio = @nro_socio,
@@ -223,7 +229,6 @@ BEGIN
                 @cobertura_medica = @cobertura_medica,
                 @nro_cobertura_medica = @nro_cobertura_medica,
                 @id_medio_de_pago = @id_medio_de_pago,
-                @id_grupo_familiar = @id_grupo_familiar,
                 @nro_socio_rp = @nro_socio_rp,
                 @categoria_ingresada = @categoria_ingresada;
         END TRY
@@ -242,7 +247,6 @@ BEGIN
     DEALLOCATE cur;
 END;
 GO
-
 --=================================================================
 --Importar tabla de GRUPO FAMILIAR
 --=================================================================
@@ -329,8 +333,6 @@ BEGIN
         @cobertura_medica    VARCHAR(100),
         @nro_cobertura_medica VARCHAR(50),
         @id_medio_de_pago    INT = 1,
-        @id_grupo_familiar   INT,
-        @id_socio_rp         INT,
         @edad                INT,
         @categoria_ingresada VARCHAR(50);
 
@@ -363,39 +365,6 @@ BEGIN
         ELSE
             SET @categoria_ingresada = 'Mayor';
 
-        SET @id_grupo_familiar = NULL;
-
-        -- Si tiene responsable
-        IF @nro_socio_rp IS NOT NULL AND @nro_socio_rp <> ''
-        BEGIN
-            SELECT 
-                @id_socio_rp = id_socio,
-                @id_grupo_familiar = id_grupo_familiar
-            FROM socio.socio
-            WHERE nro_socio = @nro_socio_rp;
-
-            -- Si el responsable existe pero no tiene grupo familiar, se lo creo
-            IF @id_socio_rp IS NOT NULL AND @id_grupo_familiar IS NULL
-            BEGIN
-                INSERT INTO socio.grupo_familiar (fecha_creacion)
-                VALUES (GETDATE());
-
-                SET @id_grupo_familiar = SCOPE_IDENTITY();
-
-                UPDATE socio.socio
-                SET id_grupo_familiar = @id_grupo_familiar
-                WHERE id_socio = @id_socio_rp;
-            END
-        END
-        ELSE
-        BEGIN
-            -- Si no tiene responsable, crear nuevo grupo familiar
-            INSERT INTO socio.grupo_familiar (fecha_creacion)
-            VALUES (GETDATE());
-
-            SET @id_grupo_familiar = SCOPE_IDENTITY();
-        END
-
         -- Insertar socio
         BEGIN TRY
             EXEC socio.insertar_socio
@@ -410,7 +379,6 @@ BEGIN
                 @cobertura_medica = @cobertura_medica,
                 @nro_cobertura_medica = @nro_cobertura_medica,
                 @id_medio_de_pago = @id_medio_de_pago,
-                @id_grupo_familiar = @id_grupo_familiar,
                 @nro_socio_rp = @nro_socio_rp,
                 @categoria_ingresada = @categoria_ingresada;
         END TRY
@@ -428,6 +396,7 @@ BEGIN
     DEALLOCATE cur;
 END;
 GO
+
 --=================================================================
 --Importar tabla de PAGOS CUOTAS
 --=================================================================
@@ -784,36 +753,46 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-	DECLARE 
-		@id_socio INT,
-		@id_actividad INT,
-		@fecha_inscripcion DATE;
+    -- Liberar cursor si ya existe
+    IF CURSOR_STATUS('local', 'cur_inscrip') >= -1
+    BEGIN
+        IF CURSOR_STATUS('local', 'cur_inscrip') = 1
+            CLOSE cur_inscrip;
+        DEALLOCATE cur_inscrip;
+    END
 
-	DECLARE cur_inscrip CURSOR FOR
-	SELECT 
-		id_socio,
-		id_actividad,
-		MIN(fecha_asistencia) AS fecha_inscripcion
-	FROM actividad.presentismo
-	GROUP BY id_socio, id_actividad;
+    DECLARE 
+        @id_socio INT,
+        @id_actividad INT,
+        @fecha_inscripcion DATE;
 
-	OPEN cur_inscrip;
+    DECLARE cur_inscrip CURSOR FOR
+    SELECT 
+        id_socio,
+        id_actividad,
+        MIN(fecha_asistencia) AS fecha_inscripcion
+    FROM actividad.presentismo
+    GROUP BY id_socio, id_actividad;
 
-	FETCH NEXT FROM cur_inscrip INTO @id_socio, @id_actividad, @fecha_inscripcion;
+    OPEN cur_inscrip;
 
-	WHILE @@FETCH_STATUS = 0
-	BEGIN
-		EXEC actividad.insertar_inscripcion_actividad
-			@id_socio = @id_socio, 
-			@id_actividad = @id_actividad, 
-			@fecha_inscripcion = @fecha_inscripcion;
+    FETCH NEXT FROM cur_inscrip INTO @id_socio, @id_actividad, @fecha_inscripcion;
 
-		FETCH NEXT FROM cur_inscrip INTO @id_socio, @id_actividad, @fecha_inscripcion;
-	END
-	CLOSE cur_inscrip;
-	DEALLOCATE cursor_inscripciones;
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        EXEC actividad.insertar_inscripcion_actividad
+            @id_socio = @id_socio, 
+            @id_actividad = @id_actividad, 
+            @fecha_inscripcion = @fecha_inscripcion;
+
+        FETCH NEXT FROM cur_inscrip INTO @id_socio, @id_actividad, @fecha_inscripcion;
+    END
+
+    CLOSE cur_inscrip;
+    DEALLOCATE cur_inscrip;
 END
 GO
+
 
 -----------------------Cosas para que funcione el import------------------------
 --Carga de medios de pago
