@@ -1252,6 +1252,7 @@ BEGIN
     SET NOCOUNT ON;
 	DECLARE
 		@nro_socio_insc varchar(10),
+		@nro_socio_rp VARCHAR(10),
 		@id_factura_insc INT,
 		@monto_insc NUMERIC(15,2);
 
@@ -1265,7 +1266,8 @@ BEGIN
     END
 
     -- Validar existencia del socio
-	SELECT @nro_socio_insc = nro_socio
+	SELECT @nro_socio_insc = nro_socio,
+		@nro_socio_rp = nro_socio_rp
 	from socio.socio 
 	where id_socio = @id_socio;
     
@@ -1273,6 +1275,11 @@ BEGIN
     BEGIN
         RAISERROR('Socio no encontrado', 16, 1);
         RETURN;
+    END
+
+	IF @nro_socio_rp IS NOT NULL
+    BEGIN
+        SET @nro_socio_insc = @nro_socio_rp;
     END
 
     -- Validar existencia de la actividad
@@ -1295,14 +1302,6 @@ BEGIN
         RAISERROR('El socio ya está inscripto en la actividad', 16, 1);
         RETURN;
     END
-
-	--verificar si hay socio responsable
-	if EXISTS (SELECT nro_socio_rp FROM socio.socio WHERE id_socio = @id_socio)
-	BEGIN
-		SELECT @nro_socio_insc = nro_socio_rp
-		from socio.socio 
-		where id_socio = @id_socio;
-	END
 
 	--Validar si existe la factura
 	SELECT TOP 1 @id_factura_insc = id_factura
